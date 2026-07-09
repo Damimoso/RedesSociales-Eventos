@@ -1,8 +1,8 @@
-// Stripe Checkout Session — Crea sesión con split de pago (7% plataforma, 93% organizador)
+// Stripe Embedded Checkout — Sin comisiones
 //
 // POST /functions/v1/create-checkout
-// Body: { tier_id, quantity, user_id, event_id }
-// Response: { url: "https://checkout.stripe.com/..." }
+// Body: { tier_id, quantity, user_id }
+// Response: { client_secret: "cs_..." }
 //
 // Requires: STRIPE_SECRET_KEY in Supabase secrets
 
@@ -29,10 +29,10 @@ serve(async (req) => {
     const qty = parseInt(quantity, 10)
     if (qty < 1) return new Response(JSON.stringify({ error: 'quantity debe ser > 0' }), { status: 400 })
 
-    // 1. Obtener tier + evento + organizador
+    // 1. Obtener tier + evento
     const { data: tier, error: tierErr } = await supabase
       .from('ticket_tiers')
-      .select('id, price_cents, remaining, event:event_id(id, title, organizer:organizer_id(stripe_account_id))')
+      .select('id, price_cents, remaining, name, event:event_id(id, title)')
       .eq('id', tier_id)
       .single()
 
@@ -40,28 +40,20 @@ serve(async (req) => {
     if (tier.remaining < qty) return new Response(JSON.stringify({ error: 'No hay suficientes entradas disponibles' }), { status: 400 })
 
     const event = tier.event as any
-    const organizer = event.organizer as any
-    const stripeAccountId = organizer.stripe_account_id
 
-    const totalCents = tier.price_cents * qty
-    const feeCents = Math.round(totalCents * 7 / 100)
-
-    // 2. Crear sesión de Checkout
+    // 2. Crear sesión de Embedded Checkout (sin comisión)
     const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded',
       mode: 'payment',
       customer_email: (await supabase.auth.admin.getUserById(user_id)).data.user?.email,
       line_items: [{
         price_data: {
           currency: 'eur',
-          product_data: { name: tier.event?.title ?? 'Entrada', description: `Entrada: ${tier.name}` },
+          product_data: { name: event?.title ?? 'Entrada', description: `Entrada: ${tier.name}` },
           unit_amount: tier.price_cents,
         },
         quantity: qty,
       }],
-      payment_intent_data: stripeAccountId ? {
-        application_fee_amount: feeCents,
-        transfer_data: { destination: stripeAccountId },
-      } : undefined,
       metadata: {
         event_id: event.id,
         user_id,
@@ -69,11 +61,10 @@ serve(async (req) => {
         quantity: String(qty),
         unit_price_cents: String(tier.price_cents),
       },
-      success_url: `${APP_URL}/events/${event.id}?pago=ok`,
-      cancel_url: `${APP_URL}/events/${event.id}`,
+      return_url: `${APP_URL}/events/${event.id}?pago=ok`,
     })
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ client_secret: session.client_secret }), {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (err) {

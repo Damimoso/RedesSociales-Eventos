@@ -339,7 +339,7 @@ $$;
 -- ##############################################################################
 
 CREATE OR REPLACE VIEW public.ticket_details
-SECURITY INVOKER
+WITH (security_invoker = true)
 AS
 SELECT
     t.id AS ticket_id,
@@ -404,13 +404,15 @@ CREATE POLICY "tickets_update_organizer"
         OR public.is_admin()
     )
     WITH CHECK (
-        -- Solo permitir cambiar status y used_at/token_expires_at
-        -- Las columnas financieras y de cantidad se mantienen igual
-        OLD.unit_price = NEW.unit_price
-        AND OLD.total_amount = NEW.total_amount
-        AND OLD.quantity = NEW.quantity
-        AND OLD.event_id = NEW.event_id
-        AND OLD.user_id = NEW.user_id
+        public.is_admin()
+        OR (
+            -- Solo el organizador puede actualizar tickets de su evento
+            EXISTS (
+                SELECT 1 FROM public.events e
+                JOIN public.organizers o ON o.id = e.organizer_id
+                WHERE e.id = event_id AND o.user_id = auth.uid()
+            )
+        )
     );
 
 -- 7.3. event_artists: permitir que el artista actualice status de su participación

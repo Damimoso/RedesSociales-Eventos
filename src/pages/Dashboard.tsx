@@ -11,7 +11,7 @@ type EventRow = { id: string; title: string; status: string; start_date: string;
 type TicketTier = { id: string; event_id: string; name: string; price_cents: number; quantity: number; remaining: number; created_at: string }
 type EventOption = { id: string; title: string }
 type OrganizerRow = { id: string; stripe_account_id: string | null; stripe_onboarding_complete: boolean; bank_holder: string | null; bank_iban: string | null; bank_swift: string | null }
-type SalesRow = { event_id: string; event_title: string; total_tickets: number; gross_cents: number; fee_cents: number; net_cents: number; currency: string }
+type SalesRow = { event_id: string; event_title: string; total_tickets: number; gross_cents: number; currency: string }
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'eventos', label: 'Eventos' },
@@ -167,7 +167,18 @@ export default function Dashboard() {
       <div className="max-w-lg mx-auto text-center py-16">
         <h1 className="text-2xl font-bold text-white mb-4">Acceso restringido</h1>
         <p className="text-[#8B8BA7] mb-6">Solo los organizadores pueden gestionar entradas y cobros.</p>
-        {role === 'user' && <Button onClick={async () => { await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' }); setRole('organizer') }}>Solicitar ser organizador</Button>}
+        {role === 'user' && <Button onClick={async () => {
+          const { error: roleErr } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' })
+          if (roleErr) return
+          const { error: orgErr } = await supabase.from('organizers').insert({
+            user_id: user.id, org_name: user.user_metadata?.full_name || 'Organizador', org_type: 'individual',
+          })
+          if (!orgErr) {
+            const { data } = await supabase.from('organizers').select('id').eq('user_id', user.id).maybeSingle()
+            if (data) setOrgId(data.id)
+          }
+          setRole('organizer')
+        }}>Solicitar ser organizador</Button>}
       </div>
     )
   }
@@ -263,7 +274,7 @@ export default function Dashboard() {
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Configuración de pagos</h2>
       <p className="text-sm text-gray-500 mb-6">
         Conecta con Stripe para recibir los pagos de tus entradas de forma automática.
-        Stripe dividirá el importe: <strong>7% para la plataforma</strong>, <strong>93% para tu cuenta</strong>.
+        Stripe aplica su propia comisión de procesamiento; el resto se transfiere a tu cuenta.
       </p>
 
       {/* Stripe Connect */}
@@ -333,9 +344,7 @@ export default function Dashboard() {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 font-medium text-gray-500">Evento</th>
                 <th className="text-right py-3 px-2 font-medium text-gray-500">Entradas</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Bruto</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Comisión (7%)</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Neto</th>
+                <th className="text-right py-3 px-2 font-medium text-gray-500">Total vendido</th>
               </tr>
             </thead>
             <tbody>
@@ -343,9 +352,7 @@ export default function Dashboard() {
                 <tr key={s.event_id} className="border-b border-gray-100">
                   <td className="py-3 px-2 font-medium">{s.event_title}</td>
                   <td className="py-3 px-2 text-right">{s.total_tickets}</td>
-                  <td className="py-3 px-2 text-right">{centsToEur(s.gross_cents)} {s.currency}</td>
-                  <td className="py-3 px-2 text-right text-red-500">-{centsToEur(s.fee_cents)} {s.currency}</td>
-                  <td className="py-3 px-2 text-right font-semibold text-green-600">{centsToEur(s.net_cents)} {s.currency}</td>
+                  <td className="py-3 px-2 text-right font-semibold">{centsToEur(s.gross_cents)} {s.currency}</td>
                 </tr>
               ))}
             </tbody>
@@ -354,8 +361,6 @@ export default function Dashboard() {
                 <td className="py-3 px-2">Total</td>
                 <td className="py-3 px-2 text-right">{sales.reduce((a, s) => a + s.total_tickets, 0)}</td>
                 <td className="py-3 px-2 text-right">{centsToEur(sales.reduce((a, s) => a + Number(s.gross_cents), 0))} EUR</td>
-                <td className="py-3 px-2 text-right text-red-500">-{centsToEur(sales.reduce((a, s) => a + Number(s.fee_cents), 0))} EUR</td>
-                <td className="py-3 px-2 text-right text-green-600">{centsToEur(sales.reduce((a, s) => a + Number(s.net_cents), 0))} EUR</td>
               </tr>
             </tfoot>
           </table>
@@ -363,8 +368,7 @@ export default function Dashboard() {
       )}
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
         <p className="text-xs text-gray-500">
-          Todos los importes se calculan en céntimos (unidad mínima del euro) para evitar errores de redondeo.
-          La comisión del 7% se aplica sobre el bruto. El neto (93%) se transfiere automáticamente vía Stripe Connect.
+          Todos los importes se muestran en euros. Stripe aplica su propia comisión de procesamiento.
         </p>
       </div>
     </>

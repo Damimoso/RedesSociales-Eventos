@@ -44,7 +44,8 @@ export function QrValidator() {
             return
           }
 
-          setResult(data?.[0] ?? { status: 'INVALID' })
+          const row = data?.[0] ?? {}
+          setResult({ status: row.result ?? 'INVALID', ticket_id: row.ticket_id, event_title: row.event_title, user_name: row.user_name })
           setTimeout(() => resumeScanning(), 3000)
         },
         () => {},

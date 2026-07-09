@@ -4,6 +4,11 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { FollowButton } from '@/components/events/FollowButton'
+import { loadStripe } from '@stripe/stripe-js'
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
 
 type EventDetail = {
   id: string
@@ -24,6 +29,7 @@ type EventDetail = {
   remaining_capacity: number
   tags: string[] | null
   organizer_name: string
+  organizer_id: string
   category_name: string | null
 }
 
@@ -46,7 +52,7 @@ export default function EventDetail() {
   const [selectedTierId, setSelectedTierId] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [buying, setBuying] = useState(false)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [buyError, setBuyError] = useState('')
 
   const pagoOk = searchParams.get('pago') === 'ok'
@@ -72,7 +78,7 @@ export default function EventDetail() {
           cover_image_url: d.cover_image_url, address: d.address, city: d.city, province: d.province,
           country: d.country, start_date: d.start_date, end_date: d.end_date, is_free: d.is_free,
           price: d.price, currency: d.currency, max_capacity: d.max_capacity, remaining_capacity: d.remaining_capacity,
-          tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', category_name: d.category?.name ?? null,
+          tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', organizer_id: d.organizer_id, category_name: d.category?.name ?? null,
         })
       }
       if (!tiersRes.error && tiersRes.data) {
@@ -88,16 +94,15 @@ export default function EventDetail() {
 
   const handleBuy = async () => {
     if (!selectedTierId || !user || !event) return
-    setBuying(true); setBuyError('')
+    setBuyError('')
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { tier_id: selectedTierId, quantity, user_id: user.id },
       })
       if (error) throw new Error(error.message || 'Error al crear el pago')
-      if (data?.url) window.location.href = data.url
-      else throw new Error('No se recibió URL de pago')
+      if (data?.client_secret) setClientSecret(data.client_secret)
+      else throw new Error('No se recibió client_secret')
     } catch (err: any) { setBuyError(err.message) }
-    setBuying(false)
   }
 
   if (loading) return <LoadingSpinner size="lg" />
@@ -137,7 +142,10 @@ export default function EventDetail() {
               )}
             </div>
           </div>
-          <p className="text-gray-500 text-sm mt-1">Organizado por {event.organizer_name}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-gray-500 text-sm">Organizado por {event.organizer_name}</p>
+            <FollowButton followingId={event.organizer_id} followingType="organizer" />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -169,7 +177,7 @@ export default function EventDetail() {
         )}
 
         {/* Ticket tiers */}
-        {tiers.length > 0 && user && (
+        {tiers.length > 0 && user && !clientSecret && (
           <div className="border-t border-gray-100 pt-6">
             <h2 className="font-semibold text-gray-900 mb-3">Selecciona tus entradas</h2>
             <div className="space-y-2 mb-4">
@@ -213,15 +221,19 @@ export default function EventDetail() {
             )}
 
             {buyError && <p className="text-red-500 text-sm mb-2">{buyError}</p>}
-            <Button onClick={handleBuy} loading={buying} size="lg" className="w-full"
+            <Button onClick={handleBuy} size="lg" className="w-full"
               disabled={!selectedTier || selectedTier.remaining === 0 || quantity < 1}>
               Comprar {quantity > 1 ? `${quantity} entradas` : 'entrada'} — {centsToEur(totalCents)} €
             </Button>
+          </div>
+        )}
 
-            <p className="text-xs text-gray-400 mt-2">
-              Al comprar aceptas los términos. El pago se procesa de forma segura con Stripe.
-              La comisión del 7% va a la plataforma; el 93% restante al organizador.
-            </p>
+        {clientSecret && (
+          <div className="border-t border-gray-100 pt-6">
+            <h2 className="font-semibold text-gray-900 mb-3">Finalizar pago</h2>
+            <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
+              <EmbeddedCheckout />
+            </EmbeddedCheckoutProvider>
           </div>
         )}
 
