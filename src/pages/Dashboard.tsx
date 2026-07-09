@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { LocationPicker } from '@/components/events/LocationPicker'
+import { QrValidator } from '@/components/organizer/QrValidator'
 
-type Tab = 'eventos' | 'entradas' | 'pagos' | 'ventas'
+type Tab = 'eventos' | 'entradas' | 'pagos' | 'ventas' | 'validar'
 type EventRow = { id: string; title: string; status: string; start_date: string; remaining_capacity: number; max_capacity: number }
 type Category = { id: string; name: string; slug: string }
 type TicketTier = { id: string; event_id: string; name: string; price_cents: number; quantity: number; remaining: number; created_at: string }
@@ -17,6 +18,7 @@ type SalesRow = { event_id: string; event_title: string; total_tickets: number; 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'eventos', label: 'Eventos' },
   { key: 'entradas', label: 'Entradas' },
+  { key: 'validar', label: 'Validar QR' },
   { key: 'pagos', label: 'Pagos' },
   { key: 'ventas', label: 'Ventas' },
 ]
@@ -185,13 +187,13 @@ export default function Dashboard() {
 
   // ===== GUARDS =====
   if (loading) return <LoadingSpinner />
-  if (!user) return <p className="text-center text-gray-500 py-16">Inicia sesión para acceder al dashboard</p>
+  if (!user) return <p className="text-center text-[#8B8BA7] py-16">Inicia sesión para acceder al dashboard</p>
 
   if (role !== 'organizer') {
     return (
       <div className="max-w-lg mx-auto text-center py-16">
-        <h1 className="text-2xl font-bold mb-4">Acceso restringido</h1>
-        <p className="text-gray-500 mb-6">Solo los organizadores pueden gestionar entradas y cobros.</p>
+        <h1 className="text-2xl font-bold text-white mb-4">Acceso restringido</h1>
+        <p className="text-[#8B8BA7] mb-6">Solo los organizadores pueden gestionar entradas y cobros.</p>
         {role === 'user' && <Button onClick={async () => { await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' }); setRole('organizer') }}>Solicitar ser organizador</Button>}
       </div>
     )
@@ -199,10 +201,10 @@ export default function Dashboard() {
 
   // ===== TAB NAV =====
   const renderTabNav = () => (
-    <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+    <div className="flex border-b border-[rgba(124,92,252,0.1)] mb-6 overflow-x-auto">
       {tabs.map(t => (
         <button key={t.key} onClick={() => setActiveTab(t.key)}
-          className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.key ? 'border-[#7C5CFC] text-[#7C5CFC]' : 'border-transparent text-[#8B8BA7] hover:text-white'}`}
         >{t.label}</button>
       ))}
     </div>
@@ -339,6 +341,9 @@ export default function Dashboard() {
     </>
   )
 
+  // ===== TAB: VALIDAR QR =====
+  const renderValidar = () => <QrValidator />
+
   // ===== TAB: PAGOS (Stripe Connect + fallback IBAN) =====
   const renderPagos = () => (
     <>
@@ -455,10 +460,11 @@ export default function Dashboard() {
   // ===== MAIN =====
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>
       {renderTabNav()}
       {activeTab === 'eventos' && renderEventos()}
       {activeTab === 'entradas' && renderEntradas()}
+      {activeTab === 'validar' && renderValidar()}
       {activeTab === 'pagos' && renderPagos()}
       {activeTab === 'ventas' && renderVentas()}
     </div>
