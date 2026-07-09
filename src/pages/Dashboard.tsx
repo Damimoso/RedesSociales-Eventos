@@ -1,8 +1,10 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useGeolocation } from '@/hooks/useGeolocation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { LocationPicker } from '@/components/events/LocationPicker'
 
 type EventRow = {
   id: string
@@ -13,12 +15,18 @@ type EventRow = {
   max_capacity: number
 }
 
+type Category = { id: string; name: string; slug: string }
+
 export default function Dashboard() {
   const { user } = useAuth()
+  const geo = useGeolocation()
   const [role, setRole] = useState<string | null>(null)
   const [events, setEvents] = useState<EventRow[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [categoryId, setCategoryId] = useState('')
   const [formData, setFormData] = useState({ title: '', description: '', city: '', address: '', start_date: '', end_date: '', max_capacity: 100, is_free: true, price: 0 })
   const [submitting, setSubmitting] = useState(false)
 
@@ -27,7 +35,8 @@ export default function Dashboard() {
     Promise.all([
       supabase.from('user_roles').select('role').eq('user_id', user.id),
       supabase.from('organizers').select('id').eq('user_id', user.id).single(),
-    ]).then(([rolesRes, orgRes]) => {
+      supabase.from('categories').select('id, name, slug').order('name'),
+    ]).then(([rolesRes, orgRes, catRes]) => {
       if (rolesRes.data) {
         const r = rolesRes.data.map(x => x.role)
         if (r.includes('organizer')) setRole('organizer')
@@ -39,17 +48,20 @@ export default function Dashboard() {
           .eq('organizer_id', orgRes.data.id).order('start_date', { ascending: false })
           .then(({ data }) => { if (data) setEvents(data) })
       }
+      if (catRes.data) setCategories(catRes.data)
       setLoading(false)
     })
   }, [user])
 
   const handleCreateEvent = async (e: FormEvent) => {
     e.preventDefault()
+    if (!location) return
     setSubmitting(true)
     const { data: org } = await supabase.from('organizers').select('id').eq('user_id', user!.id).single()
     if (!org) { setSubmitting(false); return }
     const { error } = await supabase.from('events').insert({
       organizer_id: org.id,
+      category_id: categoryId || null,
       title: formData.title,
       description: formData.description,
       city: formData.city,
@@ -60,10 +72,12 @@ export default function Dashboard() {
       is_free: formData.is_free,
       price: formData.is_free ? null : formData.price,
       status: 'draft',
-      location: 'POINT(0 0)' // placeholder, el usuario debe seleccionar en mapa
+      location: `POINT(${location.lng} ${location.lat})`,
     })
     if (!error) {
       setShowForm(false)
+      setLocation(null)
+      setCategoryId('')
       setFormData({ title: '', description: '', city: '', address: '', start_date: '', end_date: '', max_capacity: 100, is_free: true, price: 0 })
     }
     setSubmitting(false)
@@ -142,8 +156,25 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+              <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Sin categoría</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación en el mapa</label>
+              <p className="text-xs text-gray-400 mb-2">Haz clic en el mapa o arrastra el marcador para situar el evento</p>
+              {geo.position && (
+                <LocationPicker center={geo.position} value={location} onChange={setLocation} />
+              )}
+            </div>
           </div>
-          <Button type="submit" loading={submitting}>Crear evento (borrador)</Button>
+          {!location && (
+            <p className="text-xs text-red-500">Selecciona una ubicación en el mapa</p>
+          )}
+          <Button type="submit" loading={submitting} disabled={!location}>Crear evento (borrador)</Button>
         </form>
       )}
 
