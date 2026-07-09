@@ -1,15 +1,13 @@
 import { useState, useEffect, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { useGeolocation } from '@/hooks/useGeolocation'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { LocationPicker } from '@/components/events/LocationPicker'
 import { QrValidator } from '@/components/organizer/QrValidator'
 
 type Tab = 'eventos' | 'entradas' | 'pagos' | 'ventas' | 'validar'
 type EventRow = { id: string; title: string; status: string; start_date: string; remaining_capacity: number; max_capacity: number }
-type Category = { id: string; name: string; slug: string }
 type TicketTier = { id: string; event_id: string; name: string; price_cents: number; quantity: number; remaining: number; created_at: string }
 type EventOption = { id: string; title: string }
 type OrganizerRow = { id: string; stripe_account_id: string | null; stripe_onboarding_complete: boolean; bank_holder: string | null; bank_iban: string | null; bank_swift: string | null }
@@ -27,19 +25,12 @@ const centsToEur = (c: number) => (c / 100).toFixed(2)
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const geo = useGeolocation()
   const [activeTab, setActiveTab] = useState<Tab>('eventos')
   const [role, setRole] = useState<string | null>(null)
   const [orgId, setOrgId] = useState<string | null>(null)
 
   // ——— Eventos tab ———
   const [events, setEvents] = useState<EventRow[]>([])
-  const [showEventForm, setShowEventForm] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [categoryId, setCategoryId] = useState('')
-  const [formData, setFormData] = useState({ title: '', description: '', city: '', address: '', start_date: '', end_date: '', max_capacity: 100, is_free: true, price: 0 })
-  const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
 
   // ——— Entradas tab ———
@@ -70,10 +61,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return
     const load = async () => {
-      const [rolesRes, orgRes, catRes] = await Promise.all([
+      const [rolesRes, orgRes] = await Promise.all([
         supabase.from('user_roles').select('role').eq('user_id', user.id),
         supabase.from('organizers').select('id').eq('user_id', user.id).maybeSingle(),
-        supabase.from('categories').select('id, name, slug').order('name'),
       ])
       if (rolesRes.data) {
         const r = rolesRes.data.map(x => x.role)
@@ -86,27 +76,10 @@ export default function Dashboard() {
         const { data: evts } = await supabase.from('events').select('id, title, status, start_date, remaining_capacity, max_capacity').eq('organizer_id', orgRes.data.id).order('start_date', { ascending: false })
         if (evts) setEvents(evts)
       }
-      if (catRes.data) setCategories(catRes.data)
       setLoading(false)
     }
     load()
   }, [user])
-
-  // ===== CREATE EVENT =====
-  const handleCreateEvent = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!location || !orgId) return
-    setSubmitting(true)
-    const { error } = await supabase.from('events').insert({
-      organizer_id: orgId, category_id: categoryId || null, title: formData.title, description: formData.description,
-      city: formData.city, address: formData.address, start_date: new Date(formData.start_date).toISOString(),
-      end_date: new Date(formData.end_date).toISOString(), max_capacity: formData.max_capacity,
-      is_free: formData.is_free, price: formData.is_free ? null : formData.price,
-      status: 'draft', location: `POINT(${location.lng} ${location.lat})`,
-    })
-    if (!error) { setShowEventForm(false); setLocation(null); setCategoryId(''); setFormData({ title: '', description: '', city: '', address: '', start_date: '', end_date: '', max_capacity: 100, is_free: true, price: 0 }) }
-    setSubmitting(false)
-  }
 
   // ===== TIERS =====
   useEffect(() => {
@@ -214,78 +187,18 @@ export default function Dashboard() {
   const renderEventos = () => (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Mis eventos</h2>
-        <Button onClick={() => setShowEventForm(!showEventForm)}>{showEventForm ? 'Cancelar' : 'Nuevo evento'}</Button>
+        <h2 className="text-lg font-semibold text-white">Mis eventos</h2>
+        <Link to="/events/new"><Button>+ Nuevo evento</Button></Link>
       </div>
-      {showEventForm && (
-        <form onSubmit={handleCreateEvent} className="bg-white border border-gray-200 rounded-xl p-6 mb-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Título del evento</label>
-              <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-              <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
-              <input type="text" required value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-              <input type="text" required value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-              <input type="datetime-local" required value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-              <input type="datetime-local" required value={formData.end_date} onChange={e => setFormData({...formData, end_date: e.target.value})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Aforo máximo</label>
-              <input type="number" required min={1} value={formData.max_capacity} onChange={e => setFormData({...formData, max_capacity: Number(e.target.value)})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="flex items-end gap-4">
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" checked={formData.is_free} onChange={e => setFormData({...formData, is_free: e.target.checked})} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                Gratuito
-              </label>
-              {!formData.is_free && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio (€)</label>
-                  <input type="number" min={0} step={0.01} value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-                </div>
-              )}
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-              <select value={categoryId} onChange={e => setCategoryId(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                <option value="">Sin categoría</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación en el mapa</label>
-              <p className="text-xs text-gray-400 mb-2">Haz clic en el mapa o arrastra el marcador</p>
-              {geo.position && <LocationPicker center={geo.position} value={location} onChange={setLocation} />}
-            </div>
-          </div>
-          {!location && <p className="text-xs text-red-500">Selecciona una ubicación en el mapa</p>}
-          <Button type="submit" loading={submitting} disabled={!location}>Crear evento (borrador)</Button>
-        </form>
-      )}
-      {events.length === 0 ? <p className="text-gray-400 text-sm">Aún no has creado ningún evento</p> : (
+      {events.length === 0 ? <p className="text-[#8B8BA7] text-sm">Aún no has creado ningún evento</p> : (
         <div className="space-y-2">
           {events.map(e => (
-            <div key={e.id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+            <div key={e.id} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-sm">{e.title}</h3>
-                <p className="text-xs text-gray-400">{new Date(e.start_date).toLocaleDateString('es-ES')} · {e.remaining_capacity}/{e.max_capacity} entradas</p>
+                <h3 className="font-medium text-sm text-white">{e.title}</h3>
+                <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES')} · {e.remaining_capacity}/{e.max_capacity} entradas</p>
               </div>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${e.status === 'published' ? 'bg-green-100 text-green-700' : e.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>{e.status}</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${e.status === 'published' ? 'bg-[#34D399]/20 text-[#34D399]' : e.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/10 text-[#8B8BA7]'}`}>{e.status}</span>
             </div>
           ))}
         </div>
@@ -296,44 +209,44 @@ export default function Dashboard() {
   // ===== TAB: ENTRADAS (precios en céntimos) =====
   const renderEntradas = () => (
     <>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Crear tipo de entrada</h2>
-      <form onSubmit={handleCreateTier} className="bg-white border border-gray-200 rounded-xl p-6 mb-6 space-y-4">
+      <h2 className="text-lg font-semibold text-white mb-4">Crear tipo de entrada</h2>
+      <form onSubmit={handleCreateTier} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 mb-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Evento</label>
-            <select required value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Evento</label>
+            <select required value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC]">
               <option value="">Seleccionar evento...</option>
               {myEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
             </select>
-            {myEvents.length === 0 && <p className="text-xs text-gray-400 mt-1">No tienes eventos publicados.</p>}
+            {myEvents.length === 0 && <p className="text-xs text-[#8B8BA7] mt-1">No tienes eventos publicados.</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la entrada</label>
-            <input type="text" required placeholder="Ej: General, VIP, Early Bird" value={tierName} onChange={e => setTierName(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Nombre de la entrada</label>
+            <input type="text" required placeholder="Ej: General, VIP, Early Bird" value={tierName} onChange={e => setTierName(e.target.value)} className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio (€)</label>
-            <input type="number" required min={0} step={0.01} placeholder="0.00" value={tierPriceEur} onChange={e => setTierPriceEur(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <p className="text-xs text-gray-400 mt-1">Se guardará como {Math.round(parseFloat(tierPriceEur || '0') * 100)} céntimos</p>
+            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Precio (€)</label>
+            <input type="number" required min={0} step={0.01} placeholder="0.00" value={tierPriceEur} onChange={e => setTierPriceEur(e.target.value)} className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+            <p className="text-xs text-[#8B8BA7] mt-1">Se guardará como {Math.round(parseFloat(tierPriceEur || '0') * 100)} céntimos</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad disponible</label>
-            <input type="number" required min={1} placeholder="100" value={tierQty} onChange={e => setTierQty(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Cantidad disponible</label>
+            <input type="number" required min={1} placeholder="100" value={tierQty} onChange={e => setTierQty(e.target.value)} className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
           </div>
         </div>
         <Button type="submit" loading={creatingTier} disabled={!selectedEventId || !tierName || !tierPriceEur || !tierQty}>Crear entrada</Button>
       </form>
 
-      <h3 className="text-md font-semibold text-gray-900 mb-3">Entradas creadas</h3>
-      {ticketTiers.length === 0 ? <p className="text-gray-400 text-sm">Aún no has creado tipos de entrada</p> : (
+      <h3 className="text-md font-semibold text-white mb-3">Entradas creadas</h3>
+      {ticketTiers.length === 0 ? <p className="text-[#8B8BA7] text-sm">Aún no has creado tipos de entrada</p> : (
         <div className="space-y-2">
           {ticketTiers.map(t => (
-            <div key={t.id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+            <div key={t.id} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-sm">{t.name}</h4>
-                <p className="text-xs text-gray-400">{centsToEur(t.price_cents)} € · {t.remaining}/{t.quantity} disponibles</p>
+                <h4 className="font-medium text-sm text-white">{t.name}</h4>
+                <p className="text-xs text-[#8B8BA7]">{centsToEur(t.price_cents)} € · {t.remaining}/{t.quantity} disponibles</p>
               </div>
-              <span className="text-xs text-gray-400">{new Date(t.created_at).toLocaleDateString('es-ES')}</span>
+              <span className="text-xs text-[#8B8BA7]">{new Date(t.created_at).toLocaleDateString('es-ES')}</span>
             </div>
           ))}
         </div>

@@ -9,6 +9,7 @@ import EventDetail from '@/pages/EventDetail'
 import Profile from '@/pages/Profile'
 import MyTickets from '@/pages/MyTickets'
 import Dashboard from '@/pages/Dashboard'
+import CreateEventWizard from '@/pages/CreateEventWizard'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
+            <Route path="/events/new" element={<CreateEventWizard />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Routes>
