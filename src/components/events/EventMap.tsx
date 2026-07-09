@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { NearbyEvent } from '@/hooks/useEvents'
@@ -12,7 +12,10 @@ type Props = {
 export function EventMap({ events, center, onEventClick }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const styleLoaded = useRef(false)
+  const [ready, setReady] = useState(false)
 
+  // Inicializar mapa una vez
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
@@ -27,25 +30,42 @@ export function EventMap({ events, center, onEventClick }: Props) {
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right')
 
-    map.on('load', () => map.resize())
+    map.on('load', () => {
+      map.resize()
+      styleLoaded.current = true
+      setReady(true)
+    })
+
+    map.on('error', (e) => {
+      console.warn('MapLibre error:', e.error?.message)
+    })
+
     mapRef.current = map
   }, [])
 
+  // Actualizar marcadores cuando cambien los events o cuando el estilo cargue
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    if (!map || !styleLoaded.current) return
 
-    map.getSource('events') && map.removeLayer('events-circle')
-    map.getSource('events') && map.removeLayer('events-label')
-    map.getSource('events') && map.removeSource('events')
+    // Limpiar capas/source anteriores
+    if (map.getLayer('events-label')) map.removeLayer('events-label')
+    if (map.getLayer('events-circle')) map.removeLayer('events-circle')
+    if (map.getSource('events')) map.removeSource('events')
 
-    const markers = events
-      .filter(e => typeof e.lat === 'number' && typeof e.lng === 'number')
-      .map(e => ({
-        type: 'Feature' as const,
-        geometry: { type: 'Point' as const, coordinates: [e.lng, e.lat] },
-        properties: { id: e.id, title: e.title, price: e.price, distance_km: e.distance_km, is_free: e.is_free },
-      }))
+    const validEvents = events.filter(e => typeof e.lat === 'number' && typeof e.lng === 'number')
+    if (validEvents.length === 0) return
+
+    const markers = validEvents.map(e => ({
+      type: 'Feature' as const,
+      geometry: { type: 'Point' as const, coordinates: [e.lng, e.lat] },
+      properties: {
+        id: e.id,
+        title: e.title,
+        price: e.price ?? 0,
+        is_free: e.is_free === true ? 'true' : 'false',
+      },
+    }))
 
     map.addSource('events', {
       type: 'geojson',
@@ -58,7 +78,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
       source: 'events',
       paint: {
         'circle-radius': 8,
-        'circle-color': ['case', ['get', 'is_free'], '#22c55e', '#6366f1'],
+        'circle-color': ['case', ['==', ['get', 'is_free'], 'true'], '#22c55e', '#6366f1'],
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
         'circle-opacity': 0.9,
@@ -84,25 +104,20 @@ export function EventMap({ events, center, onEventClick }: Props) {
     })
 
     if (onEventClick) {
-      map.on('click', 'events-circle', (e) => {
+      const onClick = (e: any) => {
         const id = e.features?.[0]?.properties?.id
-        id && onEventClick(id)
-      })
-      map.on('click', 'events-label', (e) => {
-        const id = e.features?.[0]?.properties?.id
-        id && onEventClick(id)
-      })
-      map.getCanvas().style.cursor = ''
+        if (id) onEventClick(id)
+      }
+      map.on('click', 'events-circle', onClick)
+      map.on('click', 'events-label', onClick)
       map.on('mouseenter', 'events-circle', () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', 'events-circle', () => { map.getCanvas().style.cursor = '' })
     }
 
-    if (markers.length > 0) {
-      const bounds = new maplibregl.LngLatBounds()
-      markers.forEach(m => bounds.extend(m.geometry.coordinates as [number, number]))
-      map.fitBounds(bounds, { padding: 60, maxZoom: 13 })
-    }
-  }, [events, onEventClick])
+    const bounds = new maplibregl.LngLatBounds()
+    markers.forEach(m => bounds.extend(m.geometry.coordinates as [number, number]))
+    map.fitBounds(bounds, { padding: 60, maxZoom: 13 })
+  }, [events, onEventClick, ready])
 
   return (
     <div ref={mapContainer} className="w-full h-full rounded-xl overflow-hidden" />
