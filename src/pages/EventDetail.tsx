@@ -8,7 +8,8 @@ import { FollowButton } from '@/components/events/FollowButton'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
 
 type EventDetail = {
   id: string
@@ -228,12 +229,20 @@ export default function EventDetail() {
           </div>
         )}
 
-        {clientSecret && (
+        {clientSecret && stripePromise && (
           <div className="border-t border-gray-100 pt-6">
             <h2 className="font-semibold text-gray-900 mb-3">Finalizar pago</h2>
             <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
               <EmbeddedCheckout />
             </EmbeddedCheckoutProvider>
+          </div>
+        )}
+        {clientSecret && !stripePromise && (
+          <div className="border-t border-gray-100 pt-6">
+            <h2 className="font-semibold text-gray-900 mb-3">Finalizar pago</h2>
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-xl p-4">
+              Stripe no está configurado. Añade <code className="bg-yellow-100 px-1 rounded">VITE_STRIPE_PUBLISHABLE_KEY</code> en tu archivo <code className="bg-yellow-100 px-1 rounded">.env</code>.
+            </div>
           </div>
         )}
 
