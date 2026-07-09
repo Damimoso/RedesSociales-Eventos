@@ -48,6 +48,7 @@ export function LocationPicker({ center, value, onChange }: Props) {
 
     markerRef.current = marker
     mapRef.current = map
+    return () => { map.remove(); mapRef.current = null; markerRef.current = null }
   }, [])
 
   useEffect(() => {

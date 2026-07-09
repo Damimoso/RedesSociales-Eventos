@@ -13,8 +13,8 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
 export function Header() {
   const { user, roles, signOut } = useAuth()
   const navigate = useNavigate()
-  const isOrganizer = roles.includes('organizer') || roles.includes('admin')
-  const isAdmin = roles.includes('admin')
+  const isOrganizer = roles?.includes('organizer') || roles?.includes('admin')
+  const isAdmin = roles?.includes('admin')
 
   return (
     <header className="sticky top-0 z-40 bg-[#0F0F1A]/80 backdrop-blur-md border-b border-[rgba(124,92,252,0.1)]">
@@ -35,10 +35,10 @@ export function Header() {
               <Link to="/profile" className="flex items-center gap-2 text-sm text-white hover:text-[#7C5CFC] transition-colors">
                 <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shadow-lg"
                   style={{ background: 'linear-gradient(135deg, #7C5CFC, #FF6B9D)', color: '#fff' }}>
-                  {user.email?.[0].toUpperCase()}
+                  {user.email?.charAt(0)?.toUpperCase() ?? '?'}
                 </span>
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate('/') }}>
+              <Button variant="ghost" size="sm" onClick={async () => { try { await signOut() } finally { navigate('/') } }}>
                 Salir
               </Button>
             </>

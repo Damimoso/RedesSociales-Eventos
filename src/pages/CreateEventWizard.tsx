@@ -55,13 +55,16 @@ export default function CreateEventWizard() {
 
   useEffect(() => {
     if (!user) return
+    let cancelled = false
     Promise.all([
       supabase.from('organizers').select('id').eq('user_id', user.id).maybeSingle(),
       supabase.from('categories').select('id, name, slug').order('name'),
     ]).then(([orgRes, catRes]) => {
+      if (cancelled) return
       if (orgRes.data) setOrgId(orgRes.data.id)
       if (catRes.data) setCategories(catRes.data)
-    })
+    }).catch(() => {})
+    return () => { cancelled = true }
   }, [user])
 
   const update = useCallback((patch: Partial<FormData>) => setForm(f => ({ ...f, ...patch })), [])
@@ -117,7 +120,8 @@ export default function CreateEventWizard() {
   }
 
   if (!user) return <p className="text-center text-[#8B8BA7] py-16">Inicia sesión para crear eventos</p>
-  if (!orgId) return <LoadingSpinner />
+  if (!orgId && categories.length === 0) return <LoadingSpinner />
+  if (!orgId) return <p className="text-center text-[#8B8BA7] py-16">No tienes perfil de organizador. Solicítalo desde el dashboard.</p>
 
   return (
     <div className="max-w-2xl mx-auto">

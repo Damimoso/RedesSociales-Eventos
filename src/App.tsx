@@ -46,6 +46,13 @@ export default function App() {
             <Route path="/admin" element={
               <ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>
             } />
+            <Route path="*" element={
+              <div className="text-center py-16">
+                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
+                <p className="text-[#8B8BA7] mb-6">Página no encontrada</p>
+                <a href="/" className="text-[#7C5CFC] hover:underline">Volver al inicio</a>
+              </div>
+            } />
           </Route>
         </Routes>
       </AuthProvider>

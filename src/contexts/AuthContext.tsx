@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from 'react'
 import type { User, AuthError, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
@@ -11,8 +11,8 @@ type AuthContextValue = {
   loading: boolean
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signInWithGoogle: () => Promise<void>
-  signOut: () => Promise<void>
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>
+  signOut: () => Promise<{ error: AuthError | null }>
   refreshRoles: () => Promise<void>
 }
 
@@ -24,67 +24,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<UserRole[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchRoles = async (uid: string) => {
-    const { data } = await supabase.from('user_roles').select('role').eq('user_id', uid)
-    if (data) setRoles(data.map(r => r.role as UserRole))
-  }
+  const fetchRoles = useCallback(async (uid: string) => {
+    try {
+      const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', uid)
+      if (error) { console.error('Error fetching roles:', error); return }
+      if (data) setRoles(data.map(r => r.role as UserRole))
+    } catch (err) {
+      console.error('fetchRoles error:', err)
+    }
+  }, [])
 
   useEffect(() => {
+    let mounted = true
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
         await fetchRoles(session.user.id)
       }
-      setLoading(false)
+      if (mounted) setLoading(false)
+    }).catch(err => {
+      console.error('getSession error:', err)
+      if (mounted) setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        await fetchRoles(session.user.id)
+        try { await fetchRoles(session.user.id) } catch (err) { console.error('onAuthStateChange roles error:', err) }
       } else {
         setRoles([])
       }
-      setLoading(false)
+      if (mounted) setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => { mounted = false; subscription.unsubscribe() }
+  }, [fetchRoles])
 
   const signUp = async (email: string, password: string, displayName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: displayName } },
-    })
-    return { error }
+    try {
+      const { error } = await supabase.auth.signUp({
+        email, password,
+        options: { data: { full_name: displayName } },
+      })
+      return { error }
+    } catch (err: any) { return { error: err } }
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      return { error }
+    } catch (err: any) { return { error: err } }
   }
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    })
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin },
+      })
+      return { error }
+    } catch (err: any) { return { error: err } }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      const { error } = await supabase.auth.signOut()
+      return { error }
+    } catch (err: any) { return { error: err } }
   }
 
-  const refreshRoles = async () => {
+  const refreshRoles = useCallback(async () => {
     if (user) await fetchRoles(user.id)
     else setRoles([])
-  }
+  }, [user, fetchRoles])
+
+  const value = useMemo(() => ({
+    user, session, roles, loading,
+    signUp, signIn, signInWithGoogle, signOut, refreshRoles,
+  }), [user, session, roles, loading, refreshRoles])
 
   return (
-    <AuthContext.Provider value={{ user, session, roles, loading, signUp, signIn, signInWithGoogle, signOut, refreshRoles }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

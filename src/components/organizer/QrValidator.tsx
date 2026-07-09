@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
@@ -16,12 +16,46 @@ export function QrValidator() {
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<Result>({ status: null })
-  const [lastResult, setLastResult] = useState('')
   const [error, setError] = useState('')
+  const lastResultRef = useRef('')
+  const timeoutRef = useRef<number | null>(null)
+  const mountedRef = useRef(true)
+
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
+
+  const clearTimeouts = () => {
+    if (timeoutRef.current !== null) { clearTimeout(timeoutRef.current); timeoutRef.current = null }
+  }
+
+  const resumeScanning = useCallback(async () => {
+    if (!mountedRef.current) return
+    setResult({ status: null })
+    try {
+      await scannerRef.current?.resume()
+      if (mountedRef.current) setScanning(true)
+    } catch {}
+  }, [])
+
+  const stopScanning = useCallback(async () => {
+    clearTimeouts()
+    try {
+      await scannerRef.current?.stop()
+      scannerRef.current?.clear()
+    } catch {}
+    scannerRef.current = null
+    if (mountedRef.current) { setScanning(false); setResult({ status: null }) }
+  }, [])
 
   const startScanning = useCallback(async () => {
+    if (!mountedRef.current) return
     setError('')
     setResult({ status: null })
+    clearTimeouts()
+
+    try {
+      if (scannerRef.current) { await stopScanning() }
+    } catch {}
+
     try {
       const scanner = new Html5Qrcode(CAMERA_ID)
       scannerRef.current = scanner
@@ -29,54 +63,46 @@ export function QrValidator() {
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText) => {
-          if (decodedText === lastResult) return
-          setLastResult(decodedText)
-          scanner.pause()
-          setScanning(false)
+          try {
+            if (decodedText === lastResultRef.current) return
+            lastResultRef.current = decodedText
+            scanner.pause()
+            if (mountedRef.current) setScanning(false)
 
-          const { data, error: rpcError } = await supabase.rpc('validate_ticket', {
-            p_token: decodedText,
-          })
+            const { data, error: rpcError } = await supabase.rpc('validate_ticket', {
+              p_token: decodedText,
+            })
 
-          if (rpcError) {
-            setResult({ status: 'INVALID' })
-            setTimeout(() => resumeScanning(), 2000)
-            return
+            if (!mountedRef.current) return
+
+            if (rpcError) {
+              setResult({ status: 'INVALID' })
+              timeoutRef.current = window.setTimeout(() => resumeScanning(), 2000)
+              return
+            }
+
+            const row = data?.[0] ?? {}
+            setResult({ status: row.status ?? 'INVALID', ticket_id: row.ticket_id, event_title: row.event_title, user_name: row.user_name })
+            timeoutRef.current = window.setTimeout(() => resumeScanning(), 3000)
+          } catch {
+            if (mountedRef.current) {
+              setResult({ status: 'INVALID' })
+              timeoutRef.current = window.setTimeout(() => resumeScanning(), 2000)
+            }
           }
-
-          const row = data?.[0] ?? {}
-          setResult({ status: row.result ?? 'INVALID', ticket_id: row.ticket_id, event_title: row.event_title, user_name: row.user_name })
-          setTimeout(() => resumeScanning(), 3000)
         },
         () => {},
       )
-      setScanning(true)
+      if (mountedRef.current) setScanning(true)
     } catch (err: any) {
+      if (!mountedRef.current) return
       if (err.message?.includes('NotAllowedError') || err.message?.includes('Permission')) {
         setError('Permiso de cámara denegado. Concede acceso en la configuración del navegador.')
       } else {
         setError(err.message ?? 'Error al iniciar la cámara')
       }
     }
-  }, [lastResult])
-
-  const resumeScanning = async () => {
-    setResult({ status: null })
-    try {
-      await scannerRef.current?.resume()
-      setScanning(true)
-    } catch {}
-  }
-
-  const stopScanning = useCallback(async () => {
-    try {
-      await scannerRef.current?.stop()
-      scannerRef.current?.clear()
-    } catch {}
-    scannerRef.current = null
-    setScanning(false)
-    setResult({ status: null })
-  }, [])
+  }, [resumeScanning, stopScanning])
 
   const statusColor = (s: Result['status']) => {
     switch (s) {

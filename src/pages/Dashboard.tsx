@@ -1,10 +1,11 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { QrValidator } from '@/components/organizer/QrValidator'
+import { centsToEur } from '@/lib/format'
 
 type Tab = 'eventos' | 'entradas' | 'pagos' | 'ventas' | 'validar'
 type EventRow = { id: string; title: string; status: string; start_date: string; remaining_capacity: number; max_capacity: number }
@@ -21,19 +22,15 @@ const tabs: { key: Tab; label: string }[] = [
   { key: 'ventas', label: 'Ventas' },
 ]
 
-const centsToEur = (c: number) => (c / 100).toFixed(2)
-
 export default function Dashboard() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('eventos')
   const [role, setRole] = useState<string | null>(null)
   const [orgId, setOrgId] = useState<string | null>(null)
 
-  // ——— Eventos tab ———
   const [events, setEvents] = useState<EventRow[]>([])
   const [loading, setLoading] = useState(true)
 
-  // ——— Entradas tab ———
   const [myEvents, setMyEvents] = useState<EventOption[]>([])
   const [selectedEventId, setSelectedEventId] = useState('')
   const [tierName, setTierName] = useState('')
@@ -41,8 +38,8 @@ export default function Dashboard() {
   const [tierQty, setTierQty] = useState('')
   const [ticketTiers, setTicketTiers] = useState<TicketTier[]>([])
   const [creatingTier, setCreatingTier] = useState(false)
+  const [tierError, setTierError] = useState('')
 
-  // ——— Pagos tab ———
   const [organizer, setOrganizer] = useState<OrganizerRow | null>(null)
   const [stripeLoading, setStripeLoading] = useState(false)
   const [stripeError, setStripeError] = useState('')
@@ -53,57 +50,86 @@ export default function Dashboard() {
   const [bankSaved, setBankSaved] = useState(false)
   const [ibanError, setIbanError] = useState('')
 
-  // ——— Ventas tab ———
   const [sales, setSales] = useState<SalesRow[]>([])
   const [loadingSales, setLoadingSales] = useState(false)
+  const [salesError, setSalesError] = useState('')
 
-  // ===== LOAD =====
+  const mountedRef = useRef(true)
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
+
+  const safeSet = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
+    if (mountedRef.current) setter(value)
+  }, [])
+
   useEffect(() => {
     if (!user) return
+    let cancelled = false
     const load = async () => {
-      const [rolesRes, orgRes] = await Promise.all([
-        supabase.from('user_roles').select('role').eq('user_id', user.id),
-        supabase.from('organizers').select('id').eq('user_id', user.id).maybeSingle(),
-      ])
-      if (rolesRes.data) {
-        const r = rolesRes.data.map(x => x.role)
-        if (r.includes('organizer')) setRole('organizer')
-        else if (r.includes('artist')) setRole('artist')
-        else setRole('user')
-      }
-      if (orgRes.data) {
-        setOrgId(orgRes.data.id)
-        const { data: evts } = await supabase.from('events').select('id, title, status, start_date, remaining_capacity, max_capacity').eq('organizer_id', orgRes.data.id).order('start_date', { ascending: false })
-        if (evts) setEvents(evts)
-      }
-      setLoading(false)
+      try {
+        const [rolesRes, orgRes] = await Promise.all([
+          supabase.from('user_roles').select('role').eq('user_id', user.id),
+          supabase.from('organizers').select('id').eq('user_id', user.id).maybeSingle(),
+        ])
+        if (cancelled) return
+        if (rolesRes.data) {
+          const r = rolesRes.data.map(x => x.role)
+          if (r.includes('organizer')) setRole('organizer')
+          else if (r.includes('artist')) setRole('artist')
+          else setRole('user')
+        }
+        if (orgRes.data) {
+          setOrgId(orgRes.data.id)
+          const { data: evts } = await supabase.from('events').select('id, title, status, start_date, remaining_capacity, max_capacity').eq('organizer_id', orgRes.data.id).order('start_date', { ascending: false })
+          if (!cancelled && evts) setEvents(evts)
+        }
+      } catch (err) { console.error('Dashboard load error:', err) }
+      if (!cancelled) setLoading(false)
     }
     load()
+    return () => { cancelled = true }
   }, [user])
 
-  // ===== TIERS =====
   useEffect(() => {
     if (!orgId || activeTab !== 'entradas') return
-    supabase.from('events').select('id, title').eq('organizer_id', orgId).eq('status', 'published').then(({ data }) => { if (data) setMyEvents(data) })
-    supabase.from('ticket_tiers').select('*, events!inner(organizer_id)').eq('events.organizer_id', orgId).order('created_at', { ascending: false }).then(({ data }) => { if (data) setTicketTiers(data as unknown as TicketTier[]) })
+    let cancelled = false
+    Promise.all([
+      supabase.from('events').select('id, title').eq('organizer_id', orgId).eq('status', 'published'),
+      supabase.from('ticket_tiers').select('*, events!inner(organizer_id)').eq('events.organizer_id', orgId).order('created_at', { ascending: false }),
+    ]).then(([evtRes, tierRes]) => {
+      if (cancelled) return
+      if (evtRes.data) setMyEvents(evtRes.data)
+      if (tierRes.data) setTicketTiers(tierRes.data as unknown as TicketTier[])
+    }).catch(err => console.error('Tiers load error:', err))
+    return () => { cancelled = true }
   }, [orgId, activeTab])
 
   const handleCreateTier = async (e: FormEvent) => {
     e.preventDefault()
+    setTierError('')
     if (!selectedEventId || !tierName || !tierPriceEur || !tierQty) return
+    const qty = parseInt(tierQty, 10)
+    if (isNaN(qty) || qty < 1) { setTierError('La cantidad debe ser un número positivo'); return }
+    const priceEur = parseFloat(tierPriceEur)
+    if (isNaN(priceEur) || priceEur < 0) { setTierError('El precio debe ser un número válido'); return }
     setCreatingTier(true)
-    const priceCents = Math.round(parseFloat(tierPriceEur) * 100)
+    const priceCents = Math.round(priceEur * 100)
     const { error } = await supabase.from('ticket_tiers').insert({
-      event_id: selectedEventId, name: tierName, price_cents: priceCents, quantity: parseInt(tierQty, 10),
+      event_id: selectedEventId, name: tierName, price_cents: priceCents, quantity: qty,
     })
-    if (!error) { setSelectedEventId(''); setTierName(''); setTierPriceEur(''); setTierQty('') }
+    if (error) { setTierError(error.message); setCreatingTier(false); return }
+    setSelectedEventId(''); setTierName(''); setTierPriceEur(''); setTierQty('')
     setCreatingTier(false)
   }
 
-  // ===== STRIPE CONNECT ONBOARDING =====
   useEffect(() => {
     if (!user || activeTab !== 'pagos') return
-    supabase.from('organizers').select('id, stripe_account_id, stripe_onboarding_complete, bank_holder, bank_iban, bank_swift').eq('user_id', user.id).single().then(({ data }) => { if (data) setOrganizer(data) })
+    let cancelled = false; (async () => {
+      try {
+        const { data } = await supabase.from('organizers').select('id, stripe_account_id, stripe_onboarding_complete, bank_holder, bank_iban, bank_swift').eq('user_id', user.id).single()
+        if (!cancelled && data) setOrganizer(data)
+      } catch (err) { console.error('Organizer load error:', err) }
+    })()
+    return () => { cancelled = true }
   }, [user, activeTab])
 
   const handleStripeConnect = async () => {
@@ -119,13 +145,11 @@ export default function Dashboard() {
     setStripeLoading(false)
   }
 
-  // ===== IBAN validation =====
   const validateIban = (iban: string) => {
     if (!iban) return ''
     const clean = iban.replace(/\s/g, '').toUpperCase()
     if (clean.length < 15 || clean.length > 34) return 'El IBAN debe tener entre 15 y 34 caracteres'
     if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(clean)) return 'Formato de IBAN inválido'
-    // Algoritmo de verificación: mover los primeros 4 caracteres al final y convertir a números
     const rearranged = clean.slice(4) + clean.slice(0, 4)
     let numeric = ''
     for (const ch of rearranged) {
@@ -137,7 +161,6 @@ export default function Dashboard() {
     return remainder !== 1 ? 'IBAN inválido (checksum incorrecto)' : ''
   }
 
-  // ===== SAVE BANK (fallback manual) =====
   const handleSaveBank = async (e: FormEvent) => {
     e.preventDefault()
     const ibanErr = validateIban(bankIban)
@@ -151,14 +174,21 @@ export default function Dashboard() {
     setSavingBank(false)
   }
 
-  // ===== SALES =====
   useEffect(() => {
     if (!orgId || activeTab !== 'ventas') return
-    setLoadingSales(true)
-    supabase.rpc('get_organizer_sales', { p_organizer_id: orgId }).then(({ data }) => { if (data) setSales(data); setLoadingSales(false) })
+    let cancelled = false; setLoadingSales(true); setSalesError(''); (async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_organizer_sales', { p_organizer_id: orgId })
+        if (!cancelled) {
+          if (error) setSalesError(error.message)
+          else if (data) setSales(data)
+        }
+      } catch (err: any) { if (!cancelled) setSalesError(err?.message ?? 'Error loading sales') }
+      if (!cancelled) setLoadingSales(false)
+    })()
+    return () => { cancelled = true }
   }, [orgId, activeTab])
 
-  // ===== GUARDS =====
   if (loading) return <LoadingSpinner />
   if (!user) return <p className="text-center text-[#8B8BA7] py-16">Inicia sesión para acceder al dashboard</p>
 
@@ -168,22 +198,22 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-white mb-4">Acceso restringido</h1>
         <p className="text-[#8B8BA7] mb-6">Solo los organizadores pueden gestionar entradas y cobros.</p>
         {role === 'user' && <Button onClick={async () => {
-          const { error: roleErr } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' })
-          if (roleErr) return
-          const { error: orgErr } = await supabase.from('organizers').insert({
-            user_id: user.id, org_name: user.user_metadata?.full_name || 'Organizador', org_type: 'individual',
-          })
-          if (!orgErr) {
+          try {
+            const { error: roleErr } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' })
+            if (roleErr) return
+            const { error: orgErr } = await supabase.from('organizers').insert({
+              user_id: user.id, org_name: user.user_metadata?.full_name || 'Organizador', org_type: 'individual',
+            })
+            if (orgErr) return
             const { data } = await supabase.from('organizers').select('id').eq('user_id', user.id).maybeSingle()
             if (data) setOrgId(data.id)
-          }
-          setRole('organizer')
+            setRole('organizer')
+          } catch (err) { console.error('Error al solicitar ser organizador:', err) }
         }}>Solicitar ser organizador</Button>}
       </div>
     )
   }
 
-  // ===== TAB NAV =====
   const renderTabNav = () => (
     <div className="flex border-b border-[rgba(124,92,252,0.1)] mb-6 overflow-x-auto">
       {tabs.map(t => (
@@ -194,7 +224,6 @@ export default function Dashboard() {
     </div>
   )
 
-  // ===== TAB: EVENTOS =====
   const renderEventos = () => (
     <>
       <div className="flex items-center justify-between mb-4">
@@ -217,10 +246,10 @@ export default function Dashboard() {
     </>
   )
 
-  // ===== TAB: ENTRADAS (precios en céntimos) =====
   const renderEntradas = () => (
     <>
       <h2 className="text-lg font-semibold text-white mb-4">Crear tipo de entrada</h2>
+      {tierError && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FF6B9D] mb-4">{tierError}</div>}
       <form onSubmit={handleCreateTier} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 mb-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
@@ -265,10 +294,8 @@ export default function Dashboard() {
     </>
   )
 
-  // ===== TAB: VALIDAR QR =====
   const renderValidar = () => <QrValidator />
 
-  // ===== TAB: PAGOS (Stripe Connect + fallback IBAN) =====
   const renderPagos = () => (
     <>
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Configuración de pagos</h2>
@@ -277,7 +304,6 @@ export default function Dashboard() {
         Stripe aplica su propia comisión de procesamiento; el resto se transfiere a tu cuenta.
       </p>
 
-      {/* Stripe Connect */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
         {organizer?.stripe_account_id && organizer?.stripe_onboarding_complete ? (
           <div className="flex items-center gap-3 text-green-700">
@@ -304,7 +330,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Fallback: Datos bancarios manuales (hasta que Stripe Connect esté operativo) */}
       <details className="mt-6">
         <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">O introducir datos bancarios manualmente</summary>
         {bankSaved && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg p-4 mt-4 mb-4">Datos bancarios guardados.</div>}
@@ -328,10 +353,10 @@ export default function Dashboard() {
     </>
   )
 
-  // ===== TAB: VENTAS (céntimos → EUR) =====
   const renderVentas = () => (
     <>
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Historial de ventas</h2>
+      {salesError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 mb-4">{salesError}</div>}
       {loadingSales ? <LoadingSpinner /> : sales.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400 mb-2">Aún no tienes ventas</p>
@@ -367,14 +392,11 @@ export default function Dashboard() {
         </div>
       )}
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <p className="text-xs text-gray-500">
-          Todos los importes se muestran en euros. Stripe aplica su propia comisión de procesamiento.
-        </p>
+        <p className="text-xs text-gray-500">Todos los importes se muestran en euros. Stripe aplica su propia comisión de procesamiento.</p>
       </div>
     </>
   )
 
-  // ===== MAIN =====
   return (
     <div>
       <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>

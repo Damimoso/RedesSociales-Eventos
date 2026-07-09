@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export type NearbyEvent = {
@@ -35,26 +35,35 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseE
   const [events, setEvents] = useState<NearbyEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
+
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   const fetch = useCallback(async () => {
     if (lat === undefined || lng === undefined) {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
       return
     }
 
-    setLoading(true)
-    setError(null)
+    if (mountedRef.current) { setLoading(true); setError(null) }
 
-    const { data, error: rpcError } = await supabase
-      .rpc('find_events_nearby', { lat, lng, radius_km: radiusKm })
+    try {
+      const { data, error: rpcError } = await supabase
+        .rpc('find_events_nearby', { lat, lng, radius_km: radiusKm })
 
-    if (rpcError) {
-      setError(rpcError.message)
-      setEvents([])
-    } else {
-      setEvents(data ?? [])
+      if (!mountedRef.current) return
+
+      if (rpcError) {
+        setError(rpcError.message)
+        setEvents([])
+      } else {
+        setEvents(data ?? [])
+      }
+    } catch (err: any) {
+      if (mountedRef.current) setError(err?.message ?? 'Error fetching events')
+    } finally {
+      if (mountedRef.current) setLoading(false)
     }
-    setLoading(false)
   }, [lat, lng, radiusKm])
 
   useEffect(() => { fetch() }, [fetch])
@@ -81,20 +90,24 @@ export type FollowedEvent = {
 export function useFeed(userId?: string) {
   const [events, setEvents] = useState<FollowedEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(true)
+
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false)
-      return
-    }
+    if (!userId) { setLoading(false); return }
 
-    supabase
-      .rpc('get_feed', { p_user_id: userId })
-      .then(({ data, error }) => {
-        if (!error) setEvents(data ?? [])
-        setLoading(false)
-      })
+    setLoading(true); setError(null); (async () => {
+      try {
+        const { data, error: rpcError } = await supabase.rpc('get_feed', { p_user_id: userId })
+        if (!mountedRef.current) return
+        if (rpcError) setError(rpcError.message)
+        else setEvents(data ?? [])
+      } catch (err: any) { if (mountedRef.current) setError(err?.message ?? 'Error fetching feed') }
+      if (mountedRef.current) setLoading(false)
+    })()
   }, [userId])
 
-  return { events, loading }
+  return { events, loading, error }
 }

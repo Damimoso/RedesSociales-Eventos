@@ -19,7 +19,7 @@ export function ProtectedRoute({ children, roles, redirectTo = '/login' }: Props
   }
 
   if (roles && roles.length > 0) {
-    const hasRole = roles.some(r => userRoles.includes(r))
+    const hasRole = roles.some(r => (userRoles ?? []).includes(r))
     if (!hasRole) {
       return <Navigate to="/" replace />
     }

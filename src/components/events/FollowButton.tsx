@@ -17,34 +17,37 @@ export function FollowButton({ followingId, followingType, size = 'sm' }: Props)
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
-    supabase.from('follows').select('id')
-      .eq('follower_id', user.id)
-      .eq('following_id', followingId)
-      .eq('following_type', followingType)
-      .maybeSingle()
-      .then(({ data }) => {
-        setFollowing(!!data)
-        setLoading(false)
-      })
+    let cancelled = false; (async () => {
+      try {
+        const { data } = await supabase.from('follows').select('id')
+          .eq('follower_id', user.id).eq('following_id', followingId)
+          .eq('following_type', followingType).maybeSingle()
+        if (!cancelled) { setFollowing(!!data); setLoading(false) }
+      } catch { if (!cancelled) setLoading(false) }
+    })()
+    return () => { cancelled = true }
   }, [user, followingId, followingType])
 
   const handleToggle = async () => {
     if (!user) return
+    const prev = following
     setToggling(true)
-    if (following) {
-      await supabase.from('follows').delete()
-        .eq('follower_id', user.id)
-        .eq('following_id', followingId)
-        .eq('following_type', followingType)
-      setFollowing(false)
-    } else {
-      await supabase.from('follows').insert({
-        follower_id: user.id,
-        following_id: followingId,
-        following_type: followingType,
-      })
-      setFollowing(true)
-    }
+    try {
+      if (following) {
+        await supabase.from('follows').delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', followingId)
+          .eq('following_type', followingType)
+        setFollowing(false)
+      } else {
+        await supabase.from('follows').insert({
+          follower_id: user.id,
+          following_id: followingId,
+          following_type: followingType,
+        })
+        setFollowing(true)
+      }
+    } catch { setFollowing(prev) }
     setToggling(false)
   }
 

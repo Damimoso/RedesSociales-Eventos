@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { FollowButton } from '@/components/events/FollowButton'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
+import { centsToEur } from '@/lib/format'
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
@@ -41,8 +42,6 @@ type TicketTier = {
   quantity: number
   remaining: number
 }
-
-const centsToEur = (c: number) => (c / 100).toFixed(2)
 
 export default function EventDetail() {
   const { id } = useParams()
