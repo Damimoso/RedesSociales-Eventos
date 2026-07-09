@@ -11,9 +11,9 @@
 -- 1. EXTENSIONES
 -- ############################################################################
 
-CREATE EXTENSION IF NOT EXISTS "postgis"      WITH SCHEMA "extensions";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto"     WITH SCHEMA "extensions";
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
+CREATE EXTENSION IF NOT EXISTS "postgis";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
 -- ############################################################################
 -- 2. TIPOS ENUMERADOS
@@ -585,6 +585,9 @@ CREATE POLICY "follows_delete_own"
 -- ############################################################################
 -- 7. FUNCIONES RPC (Remote Procedure Calls)
 -- ############################################################################
+
+-- Aseguramos que el tipo GEOGRAPHY (PostGIS) sea visible durante la creación
+SET search_path TO public, extensions;
 
 -- ==========================================================================
 -- 7.1. find_events_nearby — búsqueda geolocalizada por radio
