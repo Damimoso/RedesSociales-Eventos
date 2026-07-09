@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icons/icon-192x192.png', 'icons/icon-512x512.png'],
       manifest: {
         name: 'RedSocial Eventos',
         short_name: 'Eventos',
@@ -38,6 +38,9 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
+        ios: {
+          appleMobileWebAppCapable: 'yes',
+        },
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
