@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import { Link } from 'react-router-dom'
+import { StreakBadge } from '@/components/gamification/StreakBadge'
+import { AchievementGrid } from '@/components/gamification/AchievementGrid'
 
 type Profile = {
   display_name: string | null
@@ -30,53 +32,72 @@ export default function Profile() {
   }, [user])
 
   if (loading) return <LoadingSpinner />
-  if (!user) return <p className="text-center text-gray-500 py-16">No has iniciado sesión</p>
+  if (!user) return <p className="text-center text-[#8B8BA7] py-16">No has iniciado sesión</p>
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-2xl font-bold text-indigo-700">
+    <div className="max-w-lg mx-auto space-y-6">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+          style={{ background: 'linear-gradient(135deg, #7C5CFC, #FF6B9D)', color: '#fff' }}>
           {profile?.display_name?.[0]?.toUpperCase() ?? user.email?.[0].toUpperCase()}
         </div>
-        <div>
-          <h1 className="text-xl font-bold">{profile?.display_name ?? 'Usuario'}</h1>
-          <p className="text-sm text-gray-500">{user.email}</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-white truncate">{profile?.display_name ?? 'Usuario'}</h1>
+          <p className="text-sm text-[#8B8BA7]">{user.email}</p>
         </div>
+        <StreakBadge />
       </div>
 
-      <section className="space-y-3 mb-8">
-        <h2 className="font-semibold text-gray-900">Información</h2>
-        <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-gray-500">Nombre</span><span>{profile?.display_name ?? '—'}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">Email</span><span>{user.email}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">Teléfono</span><span>{profile?.phone ?? '—'}</span></div>
+      <section className="space-y-3">
+        <h2 className="font-semibold text-white/80 text-sm uppercase tracking-wider">Información</h2>
+        <div className="bg-[#1A1A2E] rounded-xl p-4 space-y-2 text-sm border border-[rgba(124,92,252,0.1)]">
+          <div className="flex justify-between">
+            <span className="text-[#8B8BA7]">Nombre</span>
+            <span className="text-white">{profile?.display_name ?? '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#8B8BA7]">Email</span>
+            <span className="text-white">{user.email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#8B8BA7]">Teléfono</span>
+            <span className="text-white">{profile?.phone ?? '—'}</span>
+          </div>
         </div>
       </section>
 
-      <section className="mb-6">
+      <section>
         <Link
           to="/tickets"
-          className="flex items-center justify-between bg-indigo-50 rounded-xl p-4 hover:bg-indigo-100 transition-colors"
+          className="flex items-center justify-between bg-gradient-to-r from-[#7C5CFC]/20 to-transparent rounded-xl p-4 hover:from-[#7C5CFC]/30 transition-all border border-[rgba(124,92,252,0.15)]"
         >
           <div>
-            <h2 className="font-semibold text-gray-900">Mis Entradas</h2>
-            <p className="text-sm text-gray-500">Ver códigos QR de tus compras</p>
+            <h2 className="font-semibold text-white">Mis Entradas</h2>
+            <p className="text-sm text-[#8B8BA7]">Ver códigos QR de tus compras</p>
           </div>
-          <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-[#7C5CFC]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-semibold text-gray-900">Roles</h2>
+        <h2 className="font-semibold text-white/80 text-sm uppercase tracking-wider">Logros</h2>
+        <AchievementGrid />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-white/80 text-sm uppercase tracking-wider">Roles</h2>
         <div className="flex flex-wrap gap-2">
           {roles.map(r => (
-            <span key={r} className="bg-indigo-50 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full capitalize">{r}</span>
+            <span key={r} className="text-xs font-medium px-3 py-1 rounded-full capitalize"
+              style={{ background: 'rgba(124,92,252,0.15)', color: '#7C5CFC' }}>
+              {r}
+            </span>
           ))}
         </div>
         {!roles.includes('organizer') && !roles.includes('artist') && (
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-[#8B8BA7] mt-2">
             ¿Quieres crear eventos? Solicita ser organizador o artista en el dashboard.
           </p>
         )}
