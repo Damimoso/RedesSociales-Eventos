@@ -1,16 +1,22 @@
+import { useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useEventsNearby, useFeed } from '@/hooks/useEvents'
 import { useAuth } from '@/contexts/AuthContext'
 import { EventCard } from '@/components/events/EventCard'
+import { EventMap } from '@/components/events/EventMap'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import { Link } from 'react-router-dom'
 
 export default function Home() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const geo = useGeolocation()
-  const { events, loading, error } = useEventsNearby(geo.position?.lat, geo.position?.lng)
+  const { events, loading } = useEventsNearby(geo.position?.lat, geo.position?.lng)
   const { events: feed } = useFeed(user?.id)
+
+  const handleEventClick = useCallback((id: string) => navigate(`/events/${id}`), [navigate])
 
   if (geo.loading) {
     return (
@@ -31,12 +37,16 @@ export default function Home() {
           <span className="text-xs text-gray-400">Radio 25 km</span>
         </div>
 
+        {geo.position && (
+          <div className="h-[300px] mb-6 rounded-xl overflow-hidden border border-gray-200">
+            <EventMap events={events} center={geo.position} onEventClick={handleEventClick} />
+          </div>
+        )}
+
         {loading ? (
           <LoadingSpinner />
-        ) : error ? (
-          <p className="text-red-500 text-sm">{error}</p>
         ) : events.length === 0 ? (
-          <p className="text-gray-400 text-sm">No hay eventos cerca. <Link to="/events" className="text-indigo-600 underline">Ver todos</Link></p>
+          <p className="text-gray-400 text-sm text-center">No hay eventos cerca. <Link to="/events" className="text-indigo-600 underline">Explorar todos</Link></p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.slice(0, 6).map(e => <EventCard key={e.id} event={e} />)}
