@@ -22,7 +22,9 @@ type FormData = {
   address: string
 }
 
-type TierForm = { name: string; price_eur: string; quantity: string }
+let tierIdCounter = 0
+const newTierId = () => ++tierIdCounter
+type TierForm = { _key: number; name: string; price_eur: string; quantity: string }
 
 const STEPS: { step: Step; label: string }[] = [
   { step: 1, label: 'Información' },
@@ -48,7 +50,7 @@ export default function CreateEventWizard() {
   })
 
   // Tiers
-  const [tiers, setTiers] = useState<TierForm[]>([{ name: 'General', price_eur: '', quantity: '100' }])
+  const [tiers, setTiers] = useState<TierForm[]>([{ _key: newTierId(), name: 'General', price_eur: '', quantity: '100' }])
 
   // Publish mode
   const [publishMode, setPublishMode] = useState<'draft' | 'published'>('draft')
@@ -248,8 +250,8 @@ export default function CreateEventWizard() {
           <div className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-white">Tipos de entrada</h2>
 
-            {tiers.map((tier, i) => (
-              <div key={i} className="flex items-end gap-3 bg-[#0F0F1A] rounded-lg p-4 border border-white/5">
+              {tiers.map((tier, i) => (
+              <div key={tier._key} className="flex items-end gap-3 bg-[#0F0F1A] rounded-lg p-4 border border-white/5">
                 <div className="flex-1">
                   <label className="block text-[11px] font-medium text-[#8B8BA7] mb-1">Nombre</label>
                   <input type="text" value={tier.name} onChange={e => {
@@ -280,7 +282,7 @@ export default function CreateEventWizard() {
               </div>
             ))}
 
-            <Button variant="outline" size="sm" onClick={() => setTiers([...tiers, { name: '', price_eur: '', quantity: '50' }])}>
+            <Button variant="outline" size="sm" onClick={() => setTiers([...tiers, { _key: newTierId(), name: '', price_eur: '', quantity: '50' }])}>
               + Añadir otro tipo de entrada
             </Button>
           </div>

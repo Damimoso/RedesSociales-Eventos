@@ -14,6 +14,8 @@ export function useStreak() {
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(true)
 
+  const refreshRef = useRef<number>(0)
+
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   const refresh = useCallback(async () => {
@@ -23,10 +25,11 @@ export function useStreak() {
     }
 
     if (mountedRef.current) setLoading(true)
+    const gen = ++refreshRef.current
 
     try {
       const { data, error: rpcError } = await supabase.rpc('check_streak')
-      if (!mountedRef.current) return
+      if (!mountedRef.current || gen !== refreshRef.current) return
 
       if (rpcError) {
         setError(rpcError.message)
@@ -38,9 +41,9 @@ export function useStreak() {
         setError(null)
       }
     } catch (err: any) {
-      if (mountedRef.current) setError(err?.message ?? 'Error checking streak')
+      if (mountedRef.current && gen === refreshRef.current) setError(err?.message ?? 'Error checking streak')
     } finally {
-      if (mountedRef.current) setLoading(false)
+      if (mountedRef.current && gen === refreshRef.current) setLoading(false)
     }
   }, [user?.id])
 

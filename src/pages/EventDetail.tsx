@@ -59,34 +59,39 @@ export default function EventDetail() {
 
   useEffect(() => {
     if (!id) return
-    Promise.all([
-      supabase.from('events').select(`
-        id, title, description, short_description, cover_image_url,
-        address, city, province, country,
-        start_date, end_date, is_free, price, currency,
-        max_capacity, remaining_capacity, tags,
-        organizer:organizer_id(org_name),
-        category:category_id(name)
-      `).eq('id', id).single(),
-      supabase.from('ticket_tiers').select('id, name, price_cents, quantity, remaining')
-        .eq('event_id', id).order('price_cents', { ascending: true }),
-    ]).then(([eventRes, tiersRes]) => {
-      if (!eventRes.error && eventRes.data) {
-        const d = eventRes.data as any
-        setEvent({
-          id: d.id, title: d.title, description: d.description, short_description: d.short_description,
-          cover_image_url: d.cover_image_url, address: d.address, city: d.city, province: d.province,
-          country: d.country, start_date: d.start_date, end_date: d.end_date, is_free: d.is_free,
-          price: d.price, currency: d.currency, max_capacity: d.max_capacity, remaining_capacity: d.remaining_capacity,
-          tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', organizer_id: d.organizer_id, category_name: d.category?.name ?? null,
-        })
-      }
-      if (!tiersRes.error && tiersRes.data) {
-        setTiers(tiersRes.data)
-        if (tiersRes.data.length > 0) setSelectedTierId(tiersRes.data[0].id)
-      }
-      setLoading(false)
-    })
+    let cancelled = false; (async () => {
+      try {
+        const [eventRes, tiersRes] = await Promise.all([
+          supabase.from('events').select(`
+            id, title, description, short_description, cover_image_url,
+            address, city, province, country,
+            start_date, end_date, is_free, price, currency,
+            max_capacity, remaining_capacity, tags,
+            organizer:organizer_id(org_name),
+            category:category_id(name)
+          `).eq('id', id).single(),
+          supabase.from('ticket_tiers').select('id, name, price_cents, quantity, remaining')
+            .eq('event_id', id).order('price_cents', { ascending: true }),
+        ])
+        if (cancelled) return
+        if (!eventRes.error && eventRes.data) {
+          const d = eventRes.data as any
+          setEvent({
+            id: d.id, title: d.title, description: d.description, short_description: d.short_description,
+            cover_image_url: d.cover_image_url, address: d.address, city: d.city, province: d.province,
+            country: d.country, start_date: d.start_date, end_date: d.end_date, is_free: d.is_free,
+            price: d.price, currency: d.currency, max_capacity: d.max_capacity, remaining_capacity: d.remaining_capacity,
+            tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', organizer_id: d.organizer_id, category_name: d.category?.name ?? null,
+          })
+        }
+        if (!tiersRes.error && tiersRes.data) {
+          setTiers(tiersRes.data)
+          if (tiersRes.data.length > 0) setSelectedTierId(tiersRes.data[0].id)
+        }
+      } catch (err) { console.error('Error loading event:', err) }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
   }, [id])
 
   const selectedTier = tiers.find(t => t.id === selectedTierId)

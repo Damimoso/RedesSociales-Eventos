@@ -19,10 +19,14 @@ export function AchievementGrid() {
 
   useEffect(() => {
     if (!user) return
-    supabase.rpc('get_achievements').then(({ data, error }) => {
-      if (!error && data) setUnlocked(new Set(data.map((a: any) => a.achievement_key)))
-      setLoading(false)
-    })
+    let cancelled = false; (async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_achievements')
+        if (!cancelled && !error && data) setUnlocked(new Set(data.map((a: any) => a.achievement_key)))
+      } catch (err) { console.error('Error loading achievements:', err) }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
   }, [user])
 
   if (loading) return <LoadingSpinner />

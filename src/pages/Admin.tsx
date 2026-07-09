@@ -19,14 +19,18 @@ export default function Admin() {
 
   useEffect(() => {
     if (!user) return
-    loadUsers()
+    let cancelled = false; (async () => {
+      await loadUsers(cancelled)
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
   }, [user])
 
-  const loadUsers = async () => {
-    setLoading(true)
-    const { data } = await supabase.rpc('admin_list_users')
-    if (data) setUsers(data as UserRow[])
-    setLoading(false)
+  const loadUsers = async (cancelled: boolean = false) => {
+    try {
+      const { data } = await supabase.rpc('admin_list_users')
+      if (!cancelled && data) setUsers(data as UserRow[])
+    } catch (err) { console.error('Error loading users:', err) }
   }
 
   const toggleRole = async (userId: string, role: string, add: boolean) => {

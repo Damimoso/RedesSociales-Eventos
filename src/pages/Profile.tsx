@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { Button } from '@/components/ui/Button'
 import { Link } from 'react-router-dom'
 import { StreakBadge } from '@/components/gamification/StreakBadge'
 import { AchievementGrid } from '@/components/gamification/AchievementGrid'
@@ -21,14 +20,19 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) return
-    Promise.all([
-      supabase.from('profiles').select('display_name, avatar_url, phone').eq('id', user.id).single(),
-      supabase.from('user_roles').select('role').eq('user_id', user.id),
-    ]).then(([profileRes, rolesRes]) => {
-      if (profileRes.data) setProfile(profileRes.data)
-      if (rolesRes.data) setRoles(rolesRes.data.map(r => r.role))
-      setLoading(false)
-    })
+    let cancelled = false; (async () => {
+      try {
+        const [profileRes, rolesRes] = await Promise.all([
+          supabase.from('profiles').select('display_name, avatar_url, phone').eq('id', user.id).single(),
+          supabase.from('user_roles').select('role').eq('user_id', user.id),
+        ])
+        if (cancelled) return
+        if (profileRes.data) setProfile(profileRes.data)
+        if (rolesRes.data) setRoles(rolesRes.data.map(r => r.role))
+      } catch (err) { console.error('Error loading profile:', err) }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
   }, [user])
 
   if (loading) return <LoadingSpinner />

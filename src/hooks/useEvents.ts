@@ -37,6 +37,8 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseE
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(true)
 
+  const fetchRef = useRef<number>(0)
+
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   const fetch = useCallback(async () => {
@@ -47,11 +49,13 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseE
 
     if (mountedRef.current) { setLoading(true); setError(null) }
 
+    const gen = ++fetchRef.current
+
     try {
       const { data, error: rpcError } = await supabase
         .rpc('find_events_nearby', { lat, lng, radius_km: radiusKm })
 
-      if (!mountedRef.current) return
+      if (!mountedRef.current || gen !== fetchRef.current) return
 
       if (rpcError) {
         setError(rpcError.message)
@@ -60,9 +64,9 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseE
         setEvents(data ?? [])
       }
     } catch (err: any) {
-      if (mountedRef.current) setError(err?.message ?? 'Error fetching events')
+      if (mountedRef.current && gen === fetchRef.current) setError(err?.message ?? 'Error fetching events')
     } finally {
-      if (mountedRef.current) setLoading(false)
+      if (mountedRef.current && gen === fetchRef.current) setLoading(false)
     }
   }, [lat, lng, radiusKm])
 
@@ -93,19 +97,22 @@ export function useFeed(userId?: string) {
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(true)
 
+  const feedRef = useRef<number>(0)
+
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   useEffect(() => {
     if (!userId) { setLoading(false); return }
 
-    setLoading(true); setError(null); (async () => {
+    setLoading(true); setError(null)
+    const gen = ++feedRef.current; (async () => {
       try {
         const { data, error: rpcError } = await supabase.rpc('get_feed', { p_user_id: userId })
-        if (!mountedRef.current) return
+        if (!mountedRef.current || gen !== feedRef.current) return
         if (rpcError) setError(rpcError.message)
         else setEvents(data ?? [])
-      } catch (err: any) { if (mountedRef.current) setError(err?.message ?? 'Error fetching feed') }
-      if (mountedRef.current) setLoading(false)
+      } catch (err: any) { if (mountedRef.current && gen === feedRef.current) setError(err?.message ?? 'Error fetching feed') }
+      if (mountedRef.current && gen === feedRef.current) setLoading(false)
     })()
   }, [userId])
 

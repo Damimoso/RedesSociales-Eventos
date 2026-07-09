@@ -35,11 +35,14 @@ export default function MyTickets() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    supabase.from('ticket_details').select('*').order('purchased_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (!error && data) setTickets(data as TicketDetail[])
-        setLoading(false)
-      })
+    let cancelled = false; (async () => {
+      try {
+        const { data, error } = await supabase.from('ticket_details').select('*').order('purchased_at', { ascending: false })
+        if (!cancelled && !error && data) setTickets(data as TicketDetail[])
+      } catch (err) { console.error('Error loading tickets:', err) }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
   }, [])
 
   const generateQr = useCallback(async (ticketId: string, qrCode: string) => {

@@ -57,10 +57,6 @@ export default function Dashboard() {
   const mountedRef = useRef(true)
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
-  const safeSet = useCallback(<T,>(setter: React.Dispatch<React.SetStateAction<T>>, value: T) => {
-    if (mountedRef.current) setter(value)
-  }, [])
-
   useEffect(() => {
     if (!user) return
     let cancelled = false

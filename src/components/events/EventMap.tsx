@@ -14,8 +14,9 @@ export function EventMap({ events, center, onEventClick }: Props) {
   const mapRef = useRef<maplibregl.Map | null>(null)
   const styleLoaded = useRef(false)
   const [ready, setReady] = useState(false)
+  const onEventClickRef = useRef(onEventClick)
+  onEventClickRef.current = onEventClick
 
-  // Inicializar mapa una vez
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
@@ -41,14 +42,13 @@ export function EventMap({ events, center, onEventClick }: Props) {
     })
 
     mapRef.current = map
+    return () => { map.remove(); mapRef.current = null; styleLoaded.current = false; setReady(false) }
   }, [])
 
-  // Actualizar marcadores cuando cambien los events o cuando el estilo cargue
   useEffect(() => {
     const map = mapRef.current
     if (!map || !styleLoaded.current) return
 
-    // Limpiar capas/source anteriores
     if (map.getLayer('events-label')) map.removeLayer('events-label')
     if (map.getLayer('events-circle')) map.removeLayer('events-circle')
     if (map.getSource('events')) map.removeSource('events')
@@ -60,9 +60,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [e.lng, e.lat] },
       properties: {
-        id: e.id,
-        title: e.title,
-        price: e.price ?? 0,
+        id: e.id, title: e.title, price: e.price ?? 0,
         is_free: e.is_free === true ? 'true' : 'false',
       },
     }))
@@ -73,51 +71,43 @@ export function EventMap({ events, center, onEventClick }: Props) {
     })
 
     map.addLayer({
-      id: 'events-circle',
-      type: 'circle',
-      source: 'events',
+      id: 'events-circle', type: 'circle', source: 'events',
       paint: {
         'circle-radius': 8,
         'circle-color': ['case', ['==', ['get', 'is_free'], 'true'], '#22c55e', '#6366f1'],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-        'circle-opacity': 0.9,
+        'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff', 'circle-opacity': 0.9,
       },
     })
 
     map.addLayer({
-      id: 'events-label',
-      type: 'symbol',
-      source: 'events',
-      layout: {
-        'text-field': '{title}',
-        'text-offset': [0, 1.5],
-        'text-anchor': 'top',
-        'text-size': 11,
-        'text-max-width': 8,
-      },
-      paint: {
-        'text-color': '#374151',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 1,
-      },
+      id: 'events-label', type: 'symbol', source: 'events',
+      layout: { 'text-field': '{title}', 'text-offset': [0, 1.5], 'text-anchor': 'top', 'text-size': 11, 'text-max-width': 8 },
+      paint: { 'text-color': '#374151', 'text-halo-color': '#ffffff', 'text-halo-width': 1 },
     })
 
-    if (onEventClick) {
-      const onClick = (e: any) => {
-        const id = e.features?.[0]?.properties?.id
-        if (id) onEventClick(id)
-      }
-      map.on('click', 'events-circle', onClick)
-      map.on('click', 'events-label', onClick)
-      map.on('mouseenter', 'events-circle', () => { map.getCanvas().style.cursor = 'pointer' })
-      map.on('mouseleave', 'events-circle', () => { map.getCanvas().style.cursor = '' })
+    const onClick = (e: any) => {
+      const id = e.features?.[0]?.properties?.id
+      if (id && onEventClickRef.current) onEventClickRef.current(id)
     }
+    const onEnter = () => { map.getCanvas().style.cursor = 'pointer' }
+    const onLeave = () => { map.getCanvas().style.cursor = '' }
+
+    map.on('click', 'events-circle', onClick)
+    map.on('click', 'events-label', onClick)
+    map.on('mouseenter', 'events-circle', onEnter)
+    map.on('mouseleave', 'events-circle', onLeave)
 
     const bounds = new maplibregl.LngLatBounds()
     markers.forEach(m => bounds.extend(m.geometry.coordinates as [number, number]))
     map.fitBounds(bounds, { padding: 60, maxZoom: 13 })
-  }, [events, onEventClick, ready])
+
+    return () => {
+      map.off('click', 'events-circle', onClick)
+      map.off('click', 'events-label', onClick)
+      map.off('mouseenter', 'events-circle', onEnter)
+      map.off('mouseleave', 'events-circle', onLeave)
+    }
+  }, [events, ready])
 
   return (
     <div ref={mapContainer} className="w-full h-full rounded-xl overflow-hidden" />

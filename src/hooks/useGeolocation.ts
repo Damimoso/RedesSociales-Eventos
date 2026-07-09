@@ -21,6 +21,7 @@ export function useGeolocation() {
   })
 
   useEffect(() => {
+    let cancelled = false
     if (!navigator.geolocation) {
       setState({ position: DEFAULT_LOCATION, error: 'Geolocalización no soportada — usando ubicación por defecto', loading: false })
       return
@@ -28,6 +29,7 @@ export function useGeolocation() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (cancelled) return
         setState({
           position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
           error: null,
@@ -35,10 +37,12 @@ export function useGeolocation() {
         })
       },
       () => {
+        if (cancelled) return
         setState({ position: DEFAULT_LOCATION, error: null, loading: false })
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     )
+    return () => { cancelled = true }
   }, [])
 
   return state
