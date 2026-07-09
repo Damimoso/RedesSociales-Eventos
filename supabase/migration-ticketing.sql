@@ -1,36 +1,32 @@
 -- ============================================================================
--- Migración: Sistema de Entradas y Comisiones (MVP)
+-- Migración: Sistema de Entradas + Stripe Connect + Comisiones
 -- ============================================================================
--- 1. Añade campos bancarios a organizers
--- 2. Crea tabla ticket_tiers (tipos de entrada por evento)
--- 3. Políticas RLS para ticket_tiers
--- 4. RPC get_organizer_sales para histórico de ventas
+-- 1. Ticket tiers con price_cents (INTEGER, operaciones en céntimos)
+-- 2. Stripe Connect: onboarding_complete en organizers
+-- 3. RLS para ticket_tiers
+-- 4. RPC get_organizer_sales
+-- 5. Trigger: decrementar remaining de event + tier al comprar
 -- ============================================================================
 
 -- ############################################################################
--- 1. CAMPOS BANCARIOS
+-- 1. STRIPE CONNECT — campo para tracking del onboarding
 -- ############################################################################
 
 ALTER TABLE public.organizers
-  ADD COLUMN IF NOT EXISTS bank_holder        TEXT,
-  ADD COLUMN IF NOT EXISTS bank_iban          TEXT,
-  ADD COLUMN IF NOT EXISTS bank_swift         TEXT,
-  ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN NOT NULL DEFAULT FALSE;
+  ADD COLUMN IF NOT EXISTS stripe_onboarding_complete BOOLEAN NOT NULL DEFAULT FALSE;
 
-COMMENT ON COLUMN public.organizers.bank_holder IS 'Nombre del titular de la cuenta';
-COMMENT ON COLUMN public.organizers.bank_iban IS 'IBAN / número de cuenta';
-COMMENT ON COLUMN public.organizers.bank_swift IS 'Código BIC/SWIFT';
-COMMENT ON COLUMN public.organizers.onboarding_complete IS 'Indica si el organizador completó la config. bancaria';
+COMMENT ON COLUMN public.organizers.stripe_onboarding_complete
+  IS 'Indica si el organizador completó el onboarding de Stripe Connect';
 
 -- ############################################################################
--- 2. TICKET TIERS (tipos de entrada por evento)
+-- 2. TICKET TIERS — tipos de entrada por evento (precio en CÉNTIMOS)
 -- ############################################################################
 
 CREATE TABLE IF NOT EXISTS public.ticket_tiers (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id    UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
     name        TEXT NOT NULL,
-    price       DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+    price_cents INTEGER NOT NULL CHECK (price_cents >= 0),
     quantity    INTEGER NOT NULL CHECK (quantity > 0),
     remaining   INTEGER NOT NULL CHECK (remaining >= 0),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -38,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.ticket_tiers (
 
 CREATE INDEX IF NOT EXISTS idx_ticket_tiers_event ON public.ticket_tiers(event_id);
 
--- Auto-set remaining = quantity al insertar
+-- Auto-set remaining = quantity
 CREATE OR REPLACE FUNCTION public.set_tier_remaining()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -61,7 +57,6 @@ CREATE TRIGGER trg_ticket_tiers_remaining
 
 ALTER TABLE public.ticket_tiers ENABLE ROW LEVEL SECURITY;
 
--- Cualquiera puede ver tiers de eventos publicados
 CREATE POLICY "ticket_tiers_select_public"
     ON public.ticket_tiers FOR SELECT
     USING (
@@ -76,7 +71,6 @@ CREATE POLICY "ticket_tiers_select_public"
         )
     );
 
--- El organizador puede crear tiers para sus eventos
 CREATE POLICY "ticket_tiers_insert_own"
     ON public.ticket_tiers FOR INSERT
     WITH CHECK (
@@ -88,7 +82,6 @@ CREATE POLICY "ticket_tiers_insert_own"
         )
     );
 
--- El organizador puede actualizar tiers de sus eventos
 CREATE POLICY "ticket_tiers_update_own"
     ON public.ticket_tiers FOR UPDATE
     USING (
@@ -101,7 +94,8 @@ CREATE POLICY "ticket_tiers_update_own"
     );
 
 -- ############################################################################
--- 4. RPC: get_organizer_sales — histórico de ventas con comisiones
+-- 4. RPC: get_organizer_sales — histórico con comisión 7%
+--           TODO: usar price_cents de ticket_tiers + total_amount en cents
 -- ############################################################################
 
 CREATE OR REPLACE FUNCTION public.get_organizer_sales(p_organizer_id UUID)
@@ -109,9 +103,9 @@ RETURNS TABLE(
     event_id      UUID,
     event_title   TEXT,
     total_tickets BIGINT,
-    gross_revenue DECIMAL(12,2),
-    platform_fee  DECIMAL(12,2),
-    net_revenue   DECIMAL(12,2),
+    gross_cents   BIGINT,
+    fee_cents     BIGINT,
+    net_cents     BIGINT,
     currency      TEXT
 )
 LANGUAGE plpgsql
@@ -123,9 +117,9 @@ BEGIN
         e.id,
         e.title,
         COUNT(t.id)::BIGINT AS total_tickets,
-        COALESCE(SUM(t.total_amount), 0)::DECIMAL(12,2) AS gross_revenue,
-        ROUND(COALESCE(SUM(t.total_amount) * 0.07, 0), 2)::DECIMAL(12,2) AS platform_fee,
-        ROUND(COALESCE(SUM(t.total_amount) * 0.93, 0), 2)::DECIMAL(12,2) AS net_revenue,
+        COALESCE(SUM(t.total_amount * 100)::BIGINT, 0) AS gross_cents,
+        ROUND(COALESCE(SUM(t.total_amount * 100) * 0.07, 0))::BIGINT AS fee_cents,
+        ROUND(COALESCE(SUM(t.total_amount * 100) * 0.93, 0))::BIGINT AS net_cents,
         e.currency
     FROM public.events e
     LEFT JOIN public.tickets t ON t.event_id = e.id AND t.status = 'confirmed'
@@ -136,7 +130,7 @@ END;
 $$;
 
 -- ############################################################################
--- 5. Trigger: actualizar remaining_capacity en events al comprar ticket
+-- 5. Trigger: decrementar remaining_capacity + tier.remaining al comprar
 -- ############################################################################
 
 CREATE OR REPLACE FUNCTION public.decrement_event_capacity()
@@ -157,3 +151,22 @@ CREATE TRIGGER trg_tickets_decrement_capacity
     AFTER INSERT ON public.tickets
     FOR EACH ROW
     EXECUTE FUNCTION public.decrement_event_capacity();
+
+-- ############################################################################
+-- 6. RPC: decrementar remaining de un ticket_tier tras compra
+-- ############################################################################
+
+CREATE OR REPLACE FUNCTION public.decrement_tier_remaining(
+    p_tier_id  UUID,
+    p_quantity INTEGER
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SET search_path = 'public, extensions'
+AS $$
+BEGIN
+    UPDATE public.ticket_tiers
+    SET remaining = remaining - p_quantity
+    WHERE id = p_tier_id;
+END;
+$$;
