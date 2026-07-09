@@ -15,9 +15,10 @@ export default function Home() {
   const { user } = useAuth()
   const geo = useGeolocation()
 
-  if (!user) return <OnboardingMockup />
   const { events, loading } = useEventsNearby(geo.position?.lat, geo.position?.lng)
   const { events: feed } = useFeed(user?.id)
+
+  if (!user) return <OnboardingMockup />
 
   const handleEventClick = useCallback((id: string) => navigate(`/events/${id}`), [navigate])
 
