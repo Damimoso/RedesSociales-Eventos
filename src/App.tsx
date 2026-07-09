@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Layout } from '@/components/layout/Layout'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
@@ -10,6 +11,7 @@ import Profile from '@/pages/Profile'
 import MyTickets from '@/pages/MyTickets'
 import Dashboard from '@/pages/Dashboard'
 import CreateEventWizard from '@/pages/CreateEventWizard'
+import Admin from '@/pages/Admin'
 
 export default function App() {
   return (
@@ -17,15 +19,33 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route element={<Layout />}>
+            {/* Públicas */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetail />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/tickets" element={<MyTickets />} />
-            <Route path="/events/new" element={<CreateEventWizard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+
+            {/* Requieren autenticación */}
+            <Route path="/profile" element={
+              <ProtectedRoute><Profile /></ProtectedRoute>
+            } />
+            <Route path="/tickets" element={
+              <ProtectedRoute><MyTickets /></ProtectedRoute>
+            } />
+
+            {/* Requieren rol organizer o admin */}
+            <Route path="/events/new" element={
+              <ProtectedRoute roles={['organizer', 'admin']}><CreateEventWizard /></ProtectedRoute>
+            } />
+            <Route path="/dashboard" element={
+              <ProtectedRoute roles={['organizer', 'admin']}><Dashboard /></ProtectedRoute>
+            } />
+
+            {/* Solo admin */}
+            <Route path="/admin" element={
+              <ProtectedRoute roles={['admin']}><Admin /></ProtectedRoute>
+            } />
           </Route>
         </Routes>
       </AuthProvider>
