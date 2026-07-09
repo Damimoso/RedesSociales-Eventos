@@ -1,17 +1,21 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useEventsNearby } from '@/hooks/useEvents'
 import { EventCard } from '@/components/events/EventCard'
+import { EventMap } from '@/components/events/EventMap'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 
 export default function Events() {
+  const navigate = useNavigate()
   const geo = useGeolocation()
   const [radius, setRadius] = useState(50)
   const { events, loading } = useEventsNearby(geo.position?.lat, geo.position?.lng, radius)
 
+  const handleEventClick = useCallback((id: string) => navigate(`/events/${id}`), [navigate])
+
   const categories = [...new Set(events.map(e => e.category_name).filter(Boolean))]
-  const cities = [...new Set(events.map(e => e.city))]
 
   return (
     <div>
@@ -40,6 +44,12 @@ export default function Events() {
               {c}
             </span>
           ))}
+        </div>
+      )}
+
+      {geo.position && (
+        <div className="h-[300px] mb-6 rounded-xl overflow-hidden border border-gray-200">
+          <EventMap events={events} center={geo.position} onEventClick={handleEventClick} />
         </div>
       )}
 

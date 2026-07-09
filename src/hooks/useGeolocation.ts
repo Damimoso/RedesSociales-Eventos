@@ -11,6 +11,8 @@ type GeoState = {
   loading: boolean
 }
 
+const DEFAULT_LOCATION = { lat: 28.1236, lng: -15.4366 } // Las Palmas de Gran Canaria
+
 export function useGeolocation() {
   const [state, setState] = useState<GeoState>({
     position: null,
@@ -20,7 +22,7 @@ export function useGeolocation() {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setState({ position: null, error: 'Geolocalización no soportada', loading: false })
+      setState({ position: DEFAULT_LOCATION, error: 'Geolocalización no soportada — usando ubicación por defecto', loading: false })
       return
     }
 
@@ -32,8 +34,8 @@ export function useGeolocation() {
           loading: false,
         })
       },
-      (err) => {
-        setState({ position: null, error: err.message, loading: false })
+      () => {
+        setState({ position: DEFAULT_LOCATION, error: null, loading: false })
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     )

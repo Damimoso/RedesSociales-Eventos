@@ -16,6 +16,8 @@ export type NearbyEvent = {
   max_capacity: number
   remaining_capacity: number
   distance_km: number
+  lat: number
+  lng: number
   organizer_name: string
   category_name: string | null
   category_slug: string | null

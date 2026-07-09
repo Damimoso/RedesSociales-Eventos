@@ -16,25 +16,11 @@ export default function Home() {
     return (
       <div className="text-center py-20">
         <LoadingSpinner size="lg" />
-        <p className="text-gray-500 mt-4">Obteniendo tu ubicación...</p>
+        <p className="text-gray-500 mt-4">Buscando eventos cerca de ti...</p>
       </div>
     )
   }
 
-  if (geo.error || (!geo.position && !loading)) {
-    return (
-      <div className="text-center py-20">
-        <div className="max-w-md mx-auto">
-          <p className="text-gray-500 mb-4">Activa la geolocalización para descubrir eventos cerca de ti</p>
-          <Link to="/events">
-            <Button>Explorar todos los eventos</Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  const upcoming = events.filter(e => new Date(e.start_date) > new Date())
   const free = events.filter(e => e.is_free)
 
   return (
@@ -42,11 +28,7 @@ export default function Home() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Eventos cercanos</h2>
-          {geo.position && (
-            <span className="text-xs text-gray-400">
-              Radio 25 km
-            </span>
-          )}
+          <span className="text-xs text-gray-400">Radio 25 km</span>
         </div>
 
         {loading ? (
@@ -78,12 +60,12 @@ export default function Home() {
             <span className="text-xs text-gray-400">Eventos de tus artistas y organizadores</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {feed.slice(0, 6).map(e => <EventCard key={e.id} event={{...e, short_description: e.short_description ?? '', province: null, distance_km: 0, category_name: null, max_capacity: 0, remaining_capacity: 0, currency: 'EUR', end_date: e.end_date}} />)}
+            {feed.slice(0, 6).map(e => <EventCard key={e.id} event={{...e, short_description: e.short_description ?? '', province: null, distance_km: 0, lat: 0, lng: 0, category_name: null, max_capacity: 0, remaining_capacity: 0, currency: 'EUR', end_date: e.end_date}} />)}
           </div>
         </section>
       )}
 
-      {upcoming.length > 6 && (
+      {events.length > 6 && (
         <div className="text-center">
           <Link to="/events"><Button variant="outline">Ver todos los eventos</Button></Link>
         </div>
