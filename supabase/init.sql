@@ -53,29 +53,33 @@ CREATE TYPE public.organizer_type AS ENUM (
 -- 3.1. Función helper: ¿el usuario actual es admin?
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
-LANGUAGE sql STABLE SECURITY DEFINER
+LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = 'public'
 AS $$
-    SELECT EXISTS (
+BEGIN
+    RETURN EXISTS (
         SELECT 1
         FROM public.user_roles
         WHERE user_id = auth.uid()
           AND role = 'admin'
     );
+END;
 $$;
 
 -- 3.2. Función helper: ¿el usuario actual tiene un rol concreto?
 CREATE OR REPLACE FUNCTION public.has_role(p_role public.user_role)
 RETURNS BOOLEAN
-LANGUAGE sql STABLE SECURITY DEFINER
+LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = 'public'
 AS $$
-    SELECT EXISTS (
+BEGIN
+    RETURN EXISTS (
         SELECT 1
         FROM public.user_roles
         WHERE user_id = auth.uid()
           AND role = p_role
     );
+END;
 $$;
 
 -- 3.3. Trigger: actualizar updated_at automáticamente
