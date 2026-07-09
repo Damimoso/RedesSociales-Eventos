@@ -13,9 +13,9 @@ import { OnboardingMockup } from '@/components/gamification/OnboardingMockup'
 export default function Home() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const geo = useGeolocation()
 
   if (!user) return <OnboardingMockup />
-  const geo = useGeolocation()
   const { events, loading } = useEventsNearby(geo.position?.lat, geo.position?.lng)
   const { events: feed } = useFeed(user?.id)
 
