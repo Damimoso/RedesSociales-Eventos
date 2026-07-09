@@ -48,27 +48,42 @@ serve(async (req) => {
         const metadata = session.metadata || {}
 
         if (metadata.event_id && metadata.user_id && metadata.tier_id && metadata.quantity) {
-          const unitPriceCents = session.amount_total! / parseInt(metadata.quantity)
-          const qrCode = crypto.randomUUID().replace(/-/g, '').slice(0, 20).toUpperCase()
+          const quantity = parseInt(metadata.quantity)
+          const unitPriceCents = session.amount_total! / quantity
 
+          // QR code: HMAC-SHA256 (igual que en la función purchase_tickets de Postgres)
+          const encoder = new TextEncoder()
+          const keyData = crypto.getRandomValues(new Uint8Array(32))
+          const msgData = encoder.encode(`${metadata.event_id}:${metadata.user_id}:${crypto.randomUUID()}`)
+          const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+          const sig = await crypto.subtle.sign('HMAC', cryptoKey, msgData)
+          const qrCode = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+
+          // Token inicial = mismo QR (se rotará después con rotate_ticket_token)
           const { error } = await supabase.from('tickets').insert({
             event_id: metadata.event_id,
             user_id: metadata.user_id,
-            quantity: parseInt(metadata.quantity),
+            quantity,
             unit_price: unitPriceCents / 100,
             total_amount: session.amount_total! / 100,
             status: 'confirmed',
             stripe_session_id: session.id,
             qr_code: qrCode,
+            valid_token: qrCode,
+            token_expires_at: new Date(Date.now() + 60000).toISOString(), // 60s
           })
 
-          if (error) console.error('Error insertando ticket:', error)
+          if (error) {
+            console.error('Error insertando ticket:', error)
+            break
+          }
 
-          // Decrementar remaining del ticket_tier
-          await supabase.rpc('decrement_tier_remaining', {
+          // Decrementar remaining del ticket_tier (con FOR UPDATE — seguro contra race conditions)
+          const { error: rpcError } = await supabase.rpc('decrement_tier_remaining', {
             p_tier_id: metadata.tier_id,
-            p_quantity: parseInt(metadata.quantity),
+            p_quantity: quantity,
           })
+          if (rpcError) console.error('Error decrementando tier:', rpcError)
         }
         break
       }

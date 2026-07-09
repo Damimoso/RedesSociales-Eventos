@@ -109,8 +109,9 @@ export default function EventDetail() {
   return (
     <div className="max-w-3xl mx-auto">
       {pagoOk && (
-        <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl p-4 mb-6">
-          ¡Pago realizado con éxito! Recibirás tu código QR por email.
+        <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl p-4 mb-6 flex items-center justify-between">
+          <span>¡Pago realizado con éxito!</span>
+          <Link to="/tickets" className="font-medium underline hover:text-green-800">Ver mi entrada</Link>
         </div>
       )}
 

@@ -7,6 +7,7 @@ import Register from '@/pages/Register'
 import Events from '@/pages/Events'
 import EventDetail from '@/pages/EventDetail'
 import Profile from '@/pages/Profile'
+import MyTickets from '@/pages/MyTickets'
 import Dashboard from '@/pages/Dashboard'
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/tickets" element={<MyTickets />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Routes>

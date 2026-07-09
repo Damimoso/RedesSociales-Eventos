@@ -29,7 +29,7 @@ RETURNS TABLE(
     tags               TEXT[]
 )
 LANGUAGE plpgsql STABLE
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = 'public, extensions'
 AS $$
 BEGIN

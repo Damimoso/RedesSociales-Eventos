@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
+import { Link } from 'react-router-dom'
 
 type Profile = {
   display_name: string | null
@@ -50,6 +51,21 @@ export default function Profile() {
           <div className="flex justify-between"><span className="text-gray-500">Email</span><span>{user.email}</span></div>
           <div className="flex justify-between"><span className="text-gray-500">Teléfono</span><span>{profile?.phone ?? '—'}</span></div>
         </div>
+      </section>
+
+      <section className="mb-6">
+        <Link
+          to="/tickets"
+          className="flex items-center justify-between bg-indigo-50 rounded-xl p-4 hover:bg-indigo-100 transition-colors"
+        >
+          <div>
+            <h2 className="font-semibold text-gray-900">Mis Entradas</h2>
+            <p className="text-sm text-gray-500">Ver códigos QR de tus compras</p>
+          </div>
+          <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </section>
 
       <section className="space-y-3">
