@@ -621,10 +621,7 @@ LANGUAGE plpgsql STABLE
 SECURITY DEFINER
 SET search_path = 'public, extensions'
 AS $$
-DECLARE
-    origin GEOGRAPHY;
 BEGIN
-    -- Validación de parámetros
     IF lat < -90 OR lat > 90 THEN
         RAISE EXCEPTION 'invalid latitude value: %', lat
             USING HINT = 'Latitude must be between -90 and 90';
@@ -639,8 +636,6 @@ BEGIN
         RAISE EXCEPTION 'radius must be positive, got: %', radius_km
             USING HINT = 'Provide a radius greater than 0';
     END IF;
-
-    origin := ST_SetSRID(ST_MakePoint(lng, lat), 4326)::GEOGRAPHY;
 
     RETURN QUERY
     SELECT
@@ -657,7 +652,7 @@ BEGIN
         e.currency,
         e.max_capacity,
         e.remaining_capacity,
-        ROUND((ST_Distance(e.location, origin) / 1000)::NUMERIC, 2)::DOUBLE PRECISION AS distance_km,
+        ROUND((ST_Distance(e.location, ST_SetSRID(ST_MakePoint(lng, lat), 4326)::GEOGRAPHY) / 1000)::NUMERIC, 2)::DOUBLE PRECISION AS distance_km,
         o.org_name AS organizer_name,
         c.name AS category_name,
         c.slug AS category_slug,
@@ -667,7 +662,7 @@ BEGIN
     LEFT JOIN public.categories c ON c.id = e.category_id
     WHERE
         e.status = 'published'
-        AND ST_DWithin(e.location, origin, radius_km * 1000)
+        AND ST_DWithin(e.location, ST_SetSRID(ST_MakePoint(lng, lat), 4326)::GEOGRAPHY, radius_km * 1000)
         AND e.start_date >= NOW()
     ORDER BY distance_km ASC;
 END;
