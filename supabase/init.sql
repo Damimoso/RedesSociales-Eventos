@@ -50,67 +50,13 @@ CREATE TYPE public.organizer_type AS ENUM (
 -- 3. FUNCIONES AUXILIARES (para RLS y triggers)
 -- ############################################################################
 
--- 3.1. Función helper: ¿el usuario actual es admin?
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1
-        FROM public.user_roles
-        WHERE user_id = auth.uid()
-          AND role = 'admin'
-    );
-END;
-$$;
-
--- 3.2. Función helper: ¿el usuario actual tiene un rol concreto?
-CREATE OR REPLACE FUNCTION public.has_role(p_role public.user_role)
-RETURNS BOOLEAN
-LANGUAGE plpgsql STABLE SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-BEGIN
-    RETURN EXISTS (
-        SELECT 1
-        FROM public.user_roles
-        WHERE user_id = auth.uid()
-          AND role = p_role
-    );
-END;
-$$;
-
--- 3.3. Trigger: actualizar updated_at automáticamente
+-- 3.1. Trigger: actualizar updated_at automáticamente
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
     NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$;
-
--- 3.4. Trigger: crear perfil automáticamente al registrarse
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-BEGIN
-    INSERT INTO public.profiles (id, display_name, avatar_url)
-    VALUES (
-        NEW.id,
-        COALESCE(NEW.raw_user_meta_data ->> 'full_name', NEW.email),
-        NEW.raw_user_meta_data ->> 'avatar_url'
-    );
-
-    INSERT INTO public.user_roles (user_id, role)
-    VALUES (NEW.id, 'user');
-
     RETURN NEW;
 END;
 $$;
@@ -318,9 +264,64 @@ CREATE INDEX idx_follows_follower ON public.follows(follower_id);
 CREATE INDEX idx_follows_following ON public.follows(following_id, following_type);
 
 -- ############################################################################
--- 5. TRIGGER DE REGISTRO (auth.users → profiles + user_roles)
+-- 5. FUNCIONES AUXILIARES Y TRIGGER DE REGISTRO
 -- ############################################################################
 
+-- 5.1. ¿el usuario actual es admin?
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.user_roles
+        WHERE user_id = auth.uid()
+          AND role = 'admin'
+    );
+END;
+$$;
+
+-- 5.2. ¿el usuario actual tiene un rol concreto?
+CREATE OR REPLACE FUNCTION public.has_role(p_role public.user_role)
+RETURNS BOOLEAN
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.user_roles
+        WHERE user_id = auth.uid()
+          AND role = p_role
+    );
+END;
+$$;
+
+-- 5.3. Crear perfil automáticamente al registrarse
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = 'public'
+AS $$
+BEGIN
+    INSERT INTO public.profiles (id, display_name, avatar_url)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data ->> 'full_name', NEW.email),
+        NEW.raw_user_meta_data ->> 'avatar_url'
+    );
+
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.id, 'user');
+
+    RETURN NEW;
+END;
+$$;
+
+-- 5.4. Trigger: al registrarse, crear perfil y asignar rol básico
 CREATE OR REPLACE TRIGGER trg_auth_on_signup
     AFTER INSERT ON auth.users
     FOR EACH ROW
