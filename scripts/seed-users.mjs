@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = 'https://ntkrsjwpxfubsayxqezd.supabase.co'
 const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3JzandweGZ1YnNheXhxZXpkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzU4OTc0NywiZXhwIjoyMDk5MTY1NzQ3fQ.K55HsCNoNejt05_COB9gqY9-mYMK9H5bmrkRSQs-81M'
 
+// --- same key as service_role, used by supabase client ---
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50a3JzandweGZ1YnNheXhxZXpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1ODk3NDcsImV4cCI6MjA5OTE2NTc0N30.RpjWZIgQmpcMB1O-yYgJUOHHzHHUDYD0jo1WIO4AC_w'
+
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 })

@@ -21,14 +21,32 @@ type Props = { userId: string }
 export function ArtistDashboardSection({ userId }: Props) {
   const [invitations, setInvitations] = useState<Invitation[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    setError(null)
     try {
       const { data: artist } = await supabase.from('artists').select('id').eq('user_id', userId).single()
       if (!artist) { setLoading(false); return }
-      const { data } = await supabase.rpc('get_artist_invitations', { p_artist_id: artist.id })
+      const { data, error: rpcErr } = await supabase.rpc('get_artist_invitations', { p_artist_id: artist.id })
+      if (rpcErr) {
+        if (rpcErr.message.includes('Could not find the function')) {
+          setError('El sistema de invitaciones no está disponible. Ejecuta migration-artist.sql en Supabase Dashboard.')
+        } else {
+          setError(rpcErr.message)
+        }
+        setLoading(false)
+        return
+      }
       if (data) setInvitations(data as Invitation[])
-    } catch (err) { console.error('Error loading invitations:', err) }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('Could not find the function')) {
+        setError('El sistema de invitaciones no está disponible. Ejecuta migration-artist.sql en Supabase Dashboard.')
+      } else {
+        setError(msg)
+      }
+    }
     setLoading(false)
   }, [userId])
 
@@ -36,12 +54,29 @@ export function ArtistDashboardSection({ userId }: Props) {
 
   const respond = async (invitationId: string, accept: boolean) => {
     try {
-      await supabase.rpc('respond_artist_invitation', { p_invitation_id: invitationId, p_accept: accept })
+      const { error: rpcErr } = await supabase.rpc('respond_artist_invitation', { p_invitation_id: invitationId, p_accept: accept })
+      if (rpcErr) {
+        if (rpcErr.message.includes('Could not find the function')) {
+          setError('El sistema de invitaciones no está disponible. Ejecuta migration-artist.sql en Supabase Dashboard.')
+        } else {
+          alert(rpcErr.message)
+        }
+        return
+      }
       setInvitations(prev => prev.map(i => i.id === invitationId ? { ...i, status: accept ? 'accepted' : 'rejected' } : i))
-    } catch (err) { console.error('Error responding:', err) }
+    } catch (err) { alert('Error al responder: ' + (err instanceof Error ? err.message : String(err))) }
   }
 
   if (loading) return <LoadingSpinner />
+
+  if (error) return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-[#1A1A2E] border border-red-500/30 rounded-lg p-6 text-center">
+        <p className="text-red-400 text-sm mb-3">{error}</p>
+        <Button size="sm" onClick={() => { setLoading(true); load() }}>Reintentar</Button>
+      </div>
+    </div>
+  )
 
   const pending = invitations.filter(i => i.status === 'pending')
   const accepted = invitations.filter(i => i.status === 'accepted')

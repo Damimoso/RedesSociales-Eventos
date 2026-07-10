@@ -2,8 +2,8 @@
 -- Añade filtros opcionales de categoría, ciudad y rango de fecha a find_events_nearby
 
 CREATE OR REPLACE FUNCTION public.find_events_nearby(
-    lat            DOUBLE PRECISION,
-    lng            DOUBLE PRECISION,
+    p_lat          DOUBLE PRECISION,
+    p_lng          DOUBLE PRECISION,
     radius_km      DOUBLE PRECISION DEFAULT 25,
     p_category     TEXT DEFAULT NULL,
     p_city         TEXT DEFAULT NULL,
@@ -37,13 +37,13 @@ SECURITY INVOKER
 SET search_path = 'public, extensions'
 AS $$
 BEGIN
-    IF lat < -90 OR lat > 90 THEN
-        RAISE EXCEPTION 'invalid latitude value: %', lat
+    IF p_lat < -90 OR p_lat > 90 THEN
+        RAISE EXCEPTION 'invalid latitude value: %', p_lat
             USING HINT = 'Latitude must be between -90 and 90';
     END IF;
 
-    IF lng < -180 OR lng > 180 THEN
-        RAISE EXCEPTION 'invalid longitude value: %', lng
+    IF p_lng < -180 OR p_lng > 180 THEN
+        RAISE EXCEPTION 'invalid longitude value: %', p_lng
             USING HINT = 'Longitude must be between -180 and 180';
     END IF;
 
@@ -67,7 +67,7 @@ BEGIN
         e.currency,
         e.max_capacity,
         e.remaining_capacity,
-        ROUND((ST_Distance(e.location, ST_SetSRID(ST_MakePoint(lng, lat), 4326)::GEOGRAPHY) / 1000)::NUMERIC, 2)::DOUBLE PRECISION AS distance_km,
+        ROUND((ST_Distance(e.location, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)::GEOGRAPHY) / 1000)::NUMERIC, 2)::DOUBLE PRECISION AS distance_km,
         ST_Y(e.location::GEOMETRY) AS lat,
         ST_X(e.location::GEOMETRY) AS lng,
         o.org_name AS organizer_name,
@@ -79,7 +79,7 @@ BEGIN
     LEFT JOIN public.categories c ON c.id = e.category_id
     WHERE
         e.status = 'published'
-        AND ST_DWithin(e.location, ST_SetSRID(ST_MakePoint(lng, lat), 4326)::GEOGRAPHY, radius_km * 1000)
+        AND ST_DWithin(e.location, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)::GEOGRAPHY, radius_km * 1000)
         AND e.start_date >= NOW()
         AND (p_category IS NULL OR c.slug = p_category)
         AND (p_city IS NULL OR LOWER(e.city) = LOWER(p_city))

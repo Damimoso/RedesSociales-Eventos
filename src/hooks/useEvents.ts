@@ -59,7 +59,7 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25, filte
     const gen = ++fetchRef.current
 
     try {
-      const params: Record<string, any> = { lat, lng, radius_km: radiusKm }
+      const params: Record<string, any> = { p_lat: lat, p_lng: lng, radius_km: radiusKm }
       if (filters?.category) params.p_category = filters.category
       if (filters?.city) params.p_city = filters.city
       if (filters?.dateFrom) params.p_date_from = filters.dateFrom
@@ -71,7 +71,11 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25, filte
       if (!mountedRef.current || gen !== fetchRef.current) return
 
       if (rpcError) {
-        setError(rpcError.message)
+        if (rpcError.message.includes('does not exist') && filters?.category) {
+          setError('Los filtros requieren migration-filters.sql. Ejecútalo en Supabase Dashboard.')
+        } else {
+          setError(rpcError.message)
+        }
         setEvents([])
       } else {
         setEvents(data ?? [])
