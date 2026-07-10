@@ -13,7 +13,7 @@ type EventRow = { id: string; title: string; status: string; start_date: string;
 type TicketTier = { id: string; event_id: string; name: string; price_cents: number; quantity: number; remaining: number; created_at: string }
 type EventOption = { id: string; title: string }
 type OrganizerRow = { id: string; stripe_account_id: string | null; stripe_onboarding_complete: boolean; bank_holder: string | null; bank_iban: string | null; bank_swift: string | null }
-type SalesRow = { event_id: string; event_title: string; total_tickets: number; gross_cents: number; currency: string }
+type SalesRow = { event_id: string; event_title: string; total_tickets: number; gross_cents: number; fee_cents: number; net_cents: number; currency: string }
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'eventos', label: 'Eventos' },
@@ -233,15 +233,25 @@ export default function Dashboard() {
       </div>
       {events.length === 0 ? <p className="text-[#8B8BA7] text-sm">Aún no has creado ningún evento</p> : (
         <div className="space-y-2">
-          {events.map(e => (
-            <div key={e.id} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-sm text-white">{e.title}</h3>
-                <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES')} · {e.remaining_capacity}/{e.max_capacity} entradas</p>
+          {events.map(e => {
+            const pct = e.max_capacity > 0 ? Math.round((e.max_capacity - e.remaining_capacity) / e.max_capacity * 100) : 0
+            return (
+            <div key={e.id} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="font-medium text-sm text-white">{e.title}</h3>
+                  <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES')} · {e.remaining_capacity}/{e.max_capacity} entradas</p>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${e.status === 'published' ? 'bg-[#34D399]/20 text-[#34D399]' : e.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/10 text-[#8B8BA7]'}`}>{e.status}</span>
               </div>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${e.status === 'published' ? 'bg-[#34D399]/20 text-[#34D399]' : e.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/10 text-[#8B8BA7]'}`}>{e.status}</span>
+              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, background: pct >= 90 ? '#FF6B9D' : pct >= 50 ? '#7C5CFC' : '#34D399' }} />
+              </div>
+              <p className="text-[10px] text-[#8B8BA7] mt-1">{pct}% vendido</p>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </>
@@ -363,14 +373,16 @@ export default function Dashboard() {
           <p className="text-gray-400 mb-2">Aún no tienes ventas</p>
           <p className="text-xs text-gray-400">Las ventas aparecerán aquí cuando los usuarios compren entradas.</p>
         </div>
-      ) : (
+      ) : (<>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-2 font-medium text-gray-500">Evento</th>
                 <th className="text-right py-3 px-2 font-medium text-gray-500">Entradas</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Total vendido</th>
+                <th className="text-right py-3 px-2 font-medium text-gray-500">Bruto</th>
+                <th className="text-right py-3 px-2 font-medium text-gray-500">Comisión (7%)</th>
+                <th className="text-right py-3 px-2 font-medium text-gray-500">Neto</th>
               </tr>
             </thead>
             <tbody>
@@ -378,7 +390,9 @@ export default function Dashboard() {
                 <tr key={s.event_id} className="border-b border-gray-100">
                   <td className="py-3 px-2 font-medium">{s.event_title}</td>
                   <td className="py-3 px-2 text-right">{s.total_tickets}</td>
-                  <td className="py-3 px-2 text-right font-semibold">{centsToEur(s.gross_cents)} {s.currency}</td>
+                  <td className="py-3 px-2 text-right">{centsToEur(s.gross_cents)} {s.currency}</td>
+                  <td className="py-3 px-2 text-right text-red-500">-{centsToEur(s.fee_cents)}</td>
+                  <td className="py-3 px-2 text-right font-semibold text-green-600">{centsToEur(s.net_cents)}</td>
                 </tr>
               ))}
             </tbody>
@@ -387,14 +401,16 @@ export default function Dashboard() {
                 <td className="py-3 px-2">Total</td>
                 <td className="py-3 px-2 text-right">{sales.reduce((a, s) => a + s.total_tickets, 0)}</td>
                 <td className="py-3 px-2 text-right">{centsToEur(sales.reduce((a, s) => a + Number(s.gross_cents), 0))} EUR</td>
+                <td className="py-3 px-2 text-right text-red-500">-{centsToEur(sales.reduce((a, s) => a + Number(s.fee_cents), 0))}</td>
+                <td className="py-3 px-2 text-right font-semibold text-green-600">{centsToEur(sales.reduce((a, s) => a + Number(s.net_cents), 0))} EUR</td>
               </tr>
             </tfoot>
           </table>
         </div>
-      )}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <p className="text-xs text-gray-500">Todos los importes se muestran en euros. Stripe aplica su propia comisión de procesamiento.</p>
-      </div>
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <p className="text-xs text-gray-500">La comisión del 7% cubre el mantenimiento de la plataforma. Stripe aplica su propia comisión de procesamiento aparte.</p>
+        </div>
+      </>)}
     </>
   )
 

@@ -52,6 +52,12 @@ export default function CreateEventWizard() {
   // Tiers
   const [tiers, setTiers] = useState<TierForm[]>([{ _key: newTierId(), name: 'General', price_eur: '', quantity: '100' }])
 
+  // Artists
+  const [artistSearch, setArtistSearch] = useState('')
+  const [artistResults, setArtistResults] = useState<{ id: string; stage_name: string }[]>([])
+  const [selectedArtists, setSelectedArtists] = useState<{ id: string; stage_name: string }[]>([])
+  const [searchingArtist, setSearchingArtist] = useState(false)
+
   // Publish mode
   const [publishMode, setPublishMode] = useState<'draft' | 'published'>('draft')
 
@@ -115,6 +121,14 @@ export default function CreateEventWizard() {
         }))
       )
       if (tierErr) { setError(tierErr.message); setSubmitting(false); return }
+    }
+
+    // 3. Vincular artistas
+    if (selectedArtists.length > 0) {
+      const { error: artistErr } = await supabase.from('event_artists').insert(
+        selectedArtists.map(a => ({ event_id: event.id, artist_id: a.id }))
+      )
+      if (artistErr) { console.error('Error linking artists:', artistErr) }
     }
 
     setSubmitting(false)
@@ -192,13 +206,51 @@ export default function CreateEventWizard() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">URL de imagen de portada</label>
-            <input type="url" value={form.cover_image_url} onChange={e => update({ cover_image_url: e.target.value })}
-              placeholder="https://ejemplo.com/imagen.jpg"
-              className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+            <div>
+              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">URL de imagen de portada</label>
+              <input type="url" value={form.cover_image_url} onChange={e => update({ cover_image_url: e.target.value })}
+                placeholder="https://ejemplo.com/imagen.jpg"
+                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#8B8BA7] mb-2">Artistas participantes</label>
+              <div className="flex gap-2 mb-2">
+                <input type="text" value={artistSearch} onChange={async e => {
+                  setArtistSearch(e.target.value)
+                  if (e.target.value.length < 2) { setArtistResults([]); return }
+                  setSearchingArtist(true)
+                  const { data } = await supabase.from('artists').select('id, stage_name').ilike('stage_name', `%${e.target.value}%`).limit(10)
+                  setArtistResults(data ?? [])
+                  setSearchingArtist(false)
+                }}
+                  placeholder="Buscar artista por nombre..."
+                  className="flex-1 bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+              </div>
+              {searchingArtist && <p className="text-xs text-[#8B8BA7] mb-1">Buscando...</p>}
+              {artistResults.length > 0 && (
+                <div className="bg-[#0F0F1A] border border-white/10 rounded-lg mb-2 overflow-hidden">
+                  {artistResults.filter(a => !selectedArtists.find(s => s.id === a.id)).map(a => (
+                    <button key={a.id} type="button" onClick={() => { setSelectedArtists([...selectedArtists, a]); setArtistSearch(''); setArtistResults([]) }}
+                      className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors">
+                      + {a.stage_name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {selectedArtists.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedArtists.map(a => (
+                    <span key={a.id} className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-[#7C5CFC]/20 text-[#7C5CFC]">
+                      {a.stage_name}
+                      <button type="button" onClick={() => setSelectedArtists(selectedArtists.filter(s => s.id !== a.id))}
+                        className="hover:text-white transition-colors">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
       )}
 
       {/* ===== STEP 2: FECHA Y UBICACIÓN ===== */}
