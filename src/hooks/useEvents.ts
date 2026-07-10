@@ -24,6 +24,13 @@ export type NearbyEvent = {
   tags: string[] | null
 }
 
+export type EventFilters = {
+  category?: string
+  city?: string
+  dateFrom?: string
+  dateTo?: string
+}
+
 type UseEventsResult = {
   events: NearbyEvent[]
   loading: boolean
@@ -31,7 +38,7 @@ type UseEventsResult = {
   refresh: () => void
 }
 
-export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseEventsResult {
+export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25, filters?: EventFilters): UseEventsResult {
   const [events, setEvents] = useState<NearbyEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -52,8 +59,14 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseE
     const gen = ++fetchRef.current
 
     try {
+      const params: Record<string, any> = { lat, lng, radius_km: radiusKm }
+      if (filters?.category) params.p_category = filters.category
+      if (filters?.city) params.p_city = filters.city
+      if (filters?.dateFrom) params.p_date_from = filters.dateFrom
+      if (filters?.dateTo) params.p_date_to = filters.dateTo
+
       const { data, error: rpcError } = await supabase
-        .rpc('find_events_nearby', { lat, lng, radius_km: radiusKm })
+        .rpc('find_events_nearby', params)
 
       if (!mountedRef.current || gen !== fetchRef.current) return
 
@@ -68,7 +81,7 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25): UseE
     } finally {
       if (mountedRef.current && gen === fetchRef.current) setLoading(false)
     }
-  }, [lat, lng, radiusKm])
+  }, [lat, lng, radiusKm, filters?.category, filters?.city, filters?.dateFrom, filters?.dateTo])
 
   useEffect(() => { fetch() }, [fetch])
 
