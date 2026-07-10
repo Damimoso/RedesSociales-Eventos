@@ -44,7 +44,7 @@ export default function MyTickets() {
     let cancelled = false; (async () => {
       try {
         const { data, error } = await supabase.from('ticket_details').select('*').order('purchased_at', { ascending: false })
-        if (!cancelled && !error && data) setTickets(data as TicketDetail[])
+        if (!cancelled && !error && data) setTickets(data as unknown as TicketDetail[])
       } catch (err) { console.error('Error loading tickets:', err) }
       if (!cancelled) setLoading(false)
     })()

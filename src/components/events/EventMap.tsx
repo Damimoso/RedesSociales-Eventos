@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { NearbyEvent } from '@/hooks/useEvents'
+import { MAP_TILE_STYLE } from '@/lib/constants'
 
 type Props = {
   events: NearbyEvent[]
@@ -52,7 +53,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: MAP_TILE_STYLE,
       center: [center.lng, center.lat],
       zoom: 11,
       attributionControl: false,
@@ -173,19 +174,22 @@ export function EventMap({ events, center, onEventClick }: Props) {
     map.on('click', 'clusters', (e) => {
       const feature = e.features?.[0]
       if (!feature) return
-      const geom = feature.geometry as any
-      map.flyTo({ center: geom.coordinates, zoom: map.getZoom() + 2 })
+      const geom = feature.geometry as GeoJSON.Point
+      map.flyTo({ center: geom.coordinates as [number, number], zoom: map.getZoom() + 2 })
     })
 
     // Click en pin individual → popup + navegar
-    const onPinClick = (e: any) => {
-      const props = e.features?.[0]?.properties
+    const onPinClick = (e: maplibregl.MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
+      const feature = e.features?.[0]
+      if (!feature) return
+      const props = feature.properties
       if (!props) return
       popupRef.current?.remove()
       const d = new Date(props.start_date).toLocaleDateString('es-ES', {
         day: 'numeric', month: 'long', year: 'numeric',
       })
-      const coords = (e.features[0].geometry as any).coordinates.slice()
+      const geom = feature.geometry as GeoJSON.Point
+      const coords: [number, number] = [geom.coordinates[0], geom.coordinates[1]]
       popupRef.current = new maplibregl.Popup({ offset: [0, -36], closeButton: true, maxWidth: '240px' })
         .setLngLat(coords)
         .setHTML(`

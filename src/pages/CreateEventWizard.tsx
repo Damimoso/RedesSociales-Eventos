@@ -71,7 +71,7 @@ export default function CreateEventWizard() {
       if (cancelled) return
       if (orgRes.data) setOrgId(orgRes.data.id)
       if (catRes.data) setCategories(catRes.data)
-    }).catch(() => {})
+    }).catch((err) => { console.error('Error loading organizer/categories:', err) })
     return () => { cancelled = true }
   }, [user])
 

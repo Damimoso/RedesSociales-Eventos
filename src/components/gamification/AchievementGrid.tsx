@@ -22,7 +22,7 @@ export function AchievementGrid() {
     let cancelled = false; (async () => {
       try {
         const { data, error } = await supabase.rpc('get_achievements')
-        if (!cancelled && !error && data) setUnlocked(new Set(data.map((a: any) => a.achievement_key)))
+        if (!cancelled && !error && data) setUnlocked(new Set(data.map((a: { achievement_key: string }) => a.achievement_key)))
       } catch (err) { console.error('Error loading achievements:', err) }
       if (!cancelled) setLoading(false)
     })()

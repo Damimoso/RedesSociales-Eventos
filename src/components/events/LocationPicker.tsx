@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { MAP_TILE_STYLE } from '@/lib/constants'
 
 type Props = {
   center: { lat: number; lng: number }
@@ -19,7 +20,7 @@ export function LocationPicker({ center, value, onChange }: Props) {
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: MAP_TILE_STYLE,
       center: [center.lng, center.lat],
       zoom: 12,
       attributionControl: false,

@@ -59,7 +59,7 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25, filte
     const gen = ++fetchRef.current
 
     try {
-      const params: Record<string, any> = { p_lat: lat, p_lng: lng, radius_km: radiusKm }
+      const params: Record<string, string | number> = { p_lat: lat, p_lng: lng, radius_km: radiusKm }
       if (filters?.category) params.p_category = filters.category
       if (filters?.city) params.p_city = filters.city
       if (filters?.dateFrom) params.p_date_from = filters.dateFrom
@@ -80,8 +80,9 @@ export function useEventsNearby(lat?: number, lng?: number, radiusKm = 25, filte
       } else {
         setEvents(data ?? [])
       }
-    } catch (err: any) {
-      if (mountedRef.current && gen === fetchRef.current) setError(err?.message ?? 'Error fetching events')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error fetching events'
+      if (mountedRef.current && gen === fetchRef.current) setError(message)
     } finally {
       if (mountedRef.current && gen === fetchRef.current) setLoading(false)
     }
@@ -128,7 +129,10 @@ export function useFeed(userId?: string) {
         if (!mountedRef.current || gen !== feedRef.current) return
         if (rpcError) setError(rpcError.message)
         else setEvents(data ?? [])
-      } catch (err: any) { if (mountedRef.current && gen === feedRef.current) setError(err?.message ?? 'Error fetching feed') }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error fetching feed'
+        if (mountedRef.current && gen === feedRef.current) setError(message)
+      }
       if (mountedRef.current && gen === feedRef.current) setLoading(false)
     })()
   }, [userId])

@@ -72,14 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: { data: { full_name: displayName } },
       })
       return { error }
-    } catch (err: any) { return { error: err } }
+    } catch {
+      return { error: new Error('Sign up failed') } as { error: AuthError | null }
+    }
   }
 
   const signIn = async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       return { error }
-    } catch (err: any) { return { error: err } }
+    } catch {
+      return { error: new Error('Sign in failed') } as { error: AuthError | null }
+    }
   }
 
   const signInWithGoogle = async () => {
@@ -89,14 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: { redirectTo: window.location.origin },
       })
       return { error }
-    } catch (err: any) { return { error: err } }
+    } catch {
+      return { error: new Error('Google sign in failed') } as { error: AuthError | null }
+    }
   }
 
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut()
       return { error }
-    } catch (err: any) { return { error: err } }
+    } catch {
+      return { error: new Error('Sign out failed') } as { error: AuthError | null }
+    }
   }
 
   const refreshRoles = useCallback(async () => {

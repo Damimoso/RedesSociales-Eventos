@@ -138,7 +138,7 @@ export default function Dashboard() {
       if (error) throw new Error(error.message || 'Error al conectar con Stripe')
       if (data?.url) window.location.href = data.url
       else throw new Error('No se recibió URL de onboarding')
-    } catch (err: any) { setStripeError(err.message) }
+    } catch (err) { setStripeError(err instanceof Error ? err.message : 'Error connecting to Stripe') }
     setStripeLoading(false)
   }
 
@@ -180,7 +180,7 @@ export default function Dashboard() {
           if (error) setSalesError(error.message)
           else if (data) setSales(data)
         }
-      } catch (err: any) { if (!cancelled) setSalesError(err?.message ?? 'Error loading sales') }
+      } catch (err) { if (!cancelled) setSalesError(err instanceof Error ? err.message : 'Error loading sales') }
       if (!cancelled) setLoadingSales(false)
     })()
     return () => { cancelled = true }

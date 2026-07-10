@@ -8,6 +8,7 @@ import { FollowButton } from '@/components/events/FollowButton'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import { centsToEur } from '@/lib/format'
+import { MAP_TILE_STYLE } from '@/lib/constants'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -58,6 +59,8 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [buyError, setBuyError] = useState('')
+  const miniMapRef = useRef<maplibregl.Map | null>(null)
+  const miniMapContainer = useRef<HTMLDivElement | null>(null)
 
   const pagoOk = searchParams.get('pago') === 'ok'
 
@@ -80,15 +83,25 @@ export default function EventDetail() {
         ])
         if (cancelled) return
         if (!eventRes.error && eventRes.data) {
-          const d = eventRes.data as any
+          const d: {
+            id: string; title: string; description: string | null; short_description: string | null;
+            cover_image_url: string | null; address: string; city: string; province: string | null;
+            country: string; start_date: string; end_date: string; is_free: boolean;
+            price: number | null; currency: string; max_capacity: number; remaining_capacity: number;
+            tags: string[] | null; location: { coordinates: [number, number] } | null;
+            organizer: { org_name: string } | null; organizer_id: string;
+            category: { name: string } | null;
+          } = eventRes.data as any
           const coords = d.location?.coordinates ?? [0, 0]
           setEvent({
             id: d.id, title: d.title, description: d.description, short_description: d.short_description,
             cover_image_url: d.cover_image_url, address: d.address, city: d.city, province: d.province,
             country: d.country, start_date: d.start_date, end_date: d.end_date, is_free: d.is_free,
             price: d.price, currency: d.currency, max_capacity: d.max_capacity, remaining_capacity: d.remaining_capacity,
-            tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', organizer_id: d.organizer_id,
-            category_name: d.category?.name ?? null, lat: coords[1], lng: coords[0],
+            tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido',
+            organizer_id: d.organizer_id,
+            category_name: d.category?.name ?? null,
+            lat: coords[1], lng: coords[0],
           })
         }
         if (!tiersRes.error && tiersRes.data) {
@@ -100,6 +113,23 @@ export default function EventDetail() {
     })()
     return () => { cancelled = true }
   }, [id])
+
+  useEffect(() => {
+    if (!event || event.lat === 0 || !miniMapContainer.current) return
+    if (miniMapRef.current) {
+      miniMapRef.current.setCenter([event.lng, event.lat])
+      return
+    }
+    const map = new maplibregl.Map({
+      container: miniMapContainer.current,
+      style: MAP_TILE_STYLE,
+      center: [event.lng, event.lat], zoom: 13,
+      interactive: false, attributionControl: false,
+    })
+    map.on('load', () => new maplibregl.Marker({ color: '#7C5CFC' }).setLngLat([event.lng, event.lat]).addTo(map))
+    miniMapRef.current = map
+    return () => { map.remove(); miniMapRef.current = null }
+  }, [event?.lat, event?.lng])
 
   const selectedTier = tiers.find(t => t.id === selectedTierId)
   const totalCents = selectedTier ? selectedTier.price_cents * quantity : 0
@@ -114,7 +144,7 @@ export default function EventDetail() {
       if (error) throw new Error(error.message || 'Error al crear el pago')
       if (data?.client_secret) setClientSecret(data.client_secret)
       else throw new Error('No se recibió client_secret')
-    } catch (err: any) { setBuyError(err.message) }
+    } catch (err) { setBuyError(err instanceof Error ? err.message : 'Error processing payment') }
   }
 
   if (loading) return <LoadingSpinner size="lg" />
@@ -171,18 +201,7 @@ export default function EventDetail() {
             <p className="font-medium">{event.address}</p>
             <p className="text-gray-500">{event.city}{event.province ? `, ${event.province}` : ''}</p>
             {event.lat !== 0 && (
-              <div className="mt-2 h-[120px] rounded-lg overflow-hidden" ref={el => {
-                if (!el || event.lat === 0) return
-                const map = new maplibregl.Map({
-                  container: el, style: 'https://tiles.openfreemap.org/styles/liberty',
-                  center: [event.lng, event.lat], zoom: 13,
-                  interactive: false, attributionControl: false,
-                })
-                map.on('load', () => {
-                  new maplibregl.Marker({ color: '#7C5CFC' })
-                    .setLngLat([event.lng, event.lat]).addTo(map)
-                })
-              }} />
+              <div className="mt-2 h-[120px] rounded-lg overflow-hidden" ref={miniMapContainer} />
             )}
           </div>
         </div>

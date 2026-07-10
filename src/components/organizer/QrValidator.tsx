@@ -33,7 +33,7 @@ export function QrValidator() {
     try {
       await scannerRef.current?.resume()
       if (mountedRef.current) setScanning(true)
-    } catch {}
+    } catch { /* scanner not initialized yet */ }
   }, [])
 
   const stopScanning = useCallback(async () => {
@@ -41,7 +41,7 @@ export function QrValidator() {
     try {
       await scannerRef.current?.stop()
       scannerRef.current?.clear()
-    } catch {}
+    } catch { /* scanner already stopped */ }
     scannerRef.current = null
     if (mountedRef.current) { setScanning(false); setResult({ status: null }) }
   }, [])
