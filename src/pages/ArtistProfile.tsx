@@ -1,0 +1,271 @@
+import { useEffect, useState, useCallback } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/Button'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { FollowButton } from '@/components/events/FollowButton'
+
+type ArtistData = {
+  id: string
+  stage_name: string
+  bio: string | null
+  genre: string[] | null
+  social_links: Record<string, string> | null
+  website: string | null
+  is_verified: boolean
+}
+
+type ScheduleItem = {
+  event_id: string
+  title: string
+  cover_image_url: string | null
+  city: string
+  start_date: string
+  end_date: string
+  stage_time: string | null
+  status: string
+  organizer_name: string
+}
+
+export default function ArtistProfile() {
+  const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
+  const [artist, setArtist] = useState<ArtistData | null>(null)
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const [form, setForm] = useState({ stage_name: '', bio: '', website: '', genre: '', spotify: '', youtube: '', instagram: '' })
+
+  const isOwner = user && artist?.id ? true : false
+  const [isOwnerState, setIsOwnerState] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false; (async () => {
+      try {
+        const { data: artistData } = await supabase.from('artists').select('*').eq('id', id).single()
+        if (cancelled) return
+        if (!artistData) { setLoading(false); return }
+        setArtist(artistData as ArtistData)
+        setForm({
+          stage_name: artistData.stage_name ?? '',
+          bio: artistData.bio ?? '',
+          website: artistData.website ?? '',
+          genre: (artistData.genre ?? []).join(', '),
+          spotify: artistData.social_links?.spotify ?? '',
+          youtube: artistData.social_links?.youtube ?? '',
+          instagram: artistData.social_links?.instagram ?? '',
+        })
+
+        if (user && artistData.user_id === user.id) setIsOwnerState(true)
+
+        const { data: schedData } = await supabase.rpc('get_artist_schedule', { p_artist_id: id })
+        if (!cancelled && schedData) setSchedule(schedData as ScheduleItem[])
+      } catch (err) { console.error('Error loading artist:', err) }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [id, user])
+
+  const handleSave = useCallback(async () => {
+    if (!id) return
+    setSaving(true)
+    const social_links: Record<string, string> = {}
+    if (form.spotify) social_links.spotify = form.spotify
+    if (form.youtube) social_links.youtube = form.youtube
+    if (form.instagram) social_links.instagram = form.instagram
+
+    const { error } = await supabase.from('artists').update({
+      stage_name: form.stage_name,
+      bio: form.bio || null,
+      website: form.website || null,
+      genre: form.genre ? form.genre.split(',').map(g => g.trim()).filter(Boolean) : [],
+      social_links: Object.keys(social_links).length > 0 ? social_links : null,
+    }).eq('id', id)
+
+    if (!error) {
+      setArtist(prev => prev ? { ...prev, stage_name: form.stage_name, bio: form.bio || null, website: form.website || null, genre: form.genre ? form.genre.split(',').map(g => g.trim()) : [], social_links: Object.keys(social_links).length > 0 ? social_links : null } : prev)
+      setEditing(false)
+    }
+    setSaving(false)
+  }, [id, form])
+
+  if (loading) return <LoadingSpinner />
+  if (!artist) return <p className="text-center text-[#8B8BA7] py-16">Artista no encontrado</p>
+
+  const socialLinks = artist.social_links ?? {}
+  const futureEvents = schedule.filter(e => new Date(e.start_date) >= new Date())
+  const pastEvents = schedule.filter(e => new Date(e.start_date) < new Date())
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] rounded-2xl p-8 border border-[rgba(124,92,252,0.2)] mb-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #7C5CFC, #FF6B9D)', color: '#fff' }}>
+              {artist.stage_name[0].toUpperCase()}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white">{artist.stage_name}</h1>
+                {artist.is_verified && <span title="Verificado" className="text-[#34D399]">✓</span>}
+              </div>
+              {artist.genre && artist.genre.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {artist.genre.map(g => (
+                    <span key={g} className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#7C5CFC]/20 text-[#7C5CFC]">{g}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isOwnerState && (
+              <Button size="sm" variant="outline" onClick={() => setEditing(!editing)}>
+                {editing ? 'Cancelar' : 'Editar perfil'}
+              </Button>
+            )}
+            {!isOwnerState && user && artist.id && (
+              <FollowButton followingId={artist.id} followingType="artist" />
+            )}
+          </div>
+        </div>
+
+        {editing ? (
+          <div className="mt-6 space-y-3 border-t border-white/10 pt-6">
+            <div>
+              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Nombre artístico</label>
+              <input type="text" value={form.stage_name} onChange={e => setForm(f => ({ ...f, stage_name: e.target.value }))}
+                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Biografía</label>
+              <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+                rows={4} className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC] resize-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Géneros (separados por coma)</label>
+                <input type="text" value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}
+                  placeholder="pop, rock, jazz"
+                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Web</label>
+                <input type="url" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
+                  placeholder="https://..."
+                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Spotify</label>
+                <input type="url" value={form.spotify} onChange={e => setForm(f => ({ ...f, spotify: e.target.value }))}
+                  placeholder="https://open.spotify.com/..."
+                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">YouTube</label>
+                <input type="url" value={form.youtube} onChange={e => setForm(f => ({ ...f, youtube: e.target.value }))}
+                  placeholder="https://youtube.com/@..."
+                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Instagram</label>
+                <input type="url" value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))}
+                  placeholder="https://instagram.com/..."
+                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button onClick={handleSave} loading={saving}>Guardar cambios</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {artist.bio && <p className="text-[#B0B0C8] mt-4 text-sm leading-relaxed">{artist.bio}</p>}
+
+            {(artist.website || Object.keys(socialLinks).length > 0) && (
+              <div className="flex flex-wrap gap-3 mt-4">
+                {artist.website && (
+                  <a href={artist.website} target="_blank" rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/10 text-[#B0B0C8] hover:bg-white/20 hover:text-white transition-colors">
+                    🌐 Web
+                  </a>
+                )}
+                {socialLinks.spotify && (
+                  <a href={socialLinks.spotify} target="_blank" rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#1DB954]/20 text-[#1DB954] hover:bg-[#1DB954]/30 transition-colors">
+                    Spotify
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#FF0000]/20 text-[#FF4444] hover:bg-[#FF0000]/30 transition-colors">
+                    YouTube
+                  </a>
+                )}
+                {socialLinks.instagram && (
+                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#E4405F]/20 text-[#E4405F] hover:bg-[#E4405F]/30 transition-colors">
+                    Instagram
+                  </a>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Próximos eventos */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-white mb-4">Próximos eventos</h2>
+        {futureEvents.length === 0 ? (
+          <p className="text-[#8B8BA7] text-sm">No hay eventos próximos</p>
+        ) : (
+          <div className="space-y-2">
+            {futureEvents.map(e => (
+              <Link key={e.event_id} to={`/events/${e.event_id}`}
+                className="block bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 hover:border-[rgba(124,92,252,0.3)] transition-colors">
+                <div className="flex items-center gap-3">
+                  {e.cover_image_url && <img src={e.cover_image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-sm text-white truncate">{e.title}</h3>
+                    <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {e.city}</p>
+                    {e.stage_time && <p className="text-xs text-[#7C5CFC]">Actuación: {new Date(e.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
+                  </div>
+                  <span className="text-xs text-[#8B8BA7]">{e.organizer_name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Eventos pasados */}
+      {pastEvents.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold text-white mb-4">Eventos anteriores</h2>
+          <div className="space-y-2 opacity-60">
+            {pastEvents.slice(0, 5).map(e => (
+              <Link key={e.event_id} to={`/events/${e.event_id}`}
+                className="block bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 hover:border-[rgba(124,92,252,0.3)] transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-sm text-white truncate">{e.title}</h3>
+                    <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {e.city}</p>
+                  </div>
+                  <span className="text-xs text-[#8B8BA7]">{e.organizer_name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}

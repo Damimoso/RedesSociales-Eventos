@@ -12,6 +12,7 @@ import MyTickets from '@/pages/MyTickets'
 import Dashboard from '@/pages/Dashboard'
 import CreateEventWizard from '@/pages/CreateEventWizard'
 import Admin from '@/pages/Admin'
+import ArtistProfile from '@/pages/ArtistProfile'
 
 export default function App() {
   return (
@@ -41,6 +42,9 @@ export default function App() {
             <Route path="/dashboard" element={
               <ProtectedRoute roles={['organizer', 'admin']}><Dashboard /></ProtectedRoute>
             } />
+
+            {/* Artista — perfil público */}
+            <Route path="/artist/:id" element={<ArtistProfile />} />
 
             {/* Solo admin */}
             <Route path="/admin" element={

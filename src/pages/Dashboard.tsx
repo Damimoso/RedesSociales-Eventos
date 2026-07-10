@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { QrValidator } from '@/components/organizer/QrValidator'
 import { centsToEur } from '@/lib/format'
+import { ArtistDashboardSection } from '@/components/artist/ArtistDashboardSection'
 
 type Tab = 'eventos' | 'entradas' | 'pagos' | 'ventas' | 'validar'
 type EventRow = { id: string; title: string; status: string; start_date: string; remaining_capacity: number; max_capacity: number }
@@ -188,11 +189,15 @@ export default function Dashboard() {
   if (loading) return <LoadingSpinner />
   if (!user) return <p className="text-center text-[#8B8BA7] py-16">Inicia sesión para acceder al dashboard</p>
 
+  if (role === 'artist') {
+    return <ArtistDashboardSection userId={user.id} />
+  }
+
   if (role !== 'organizer') {
     return (
       <div className="max-w-lg mx-auto text-center py-16">
-        <h1 className="text-2xl font-bold text-white mb-4">Acceso restringido</h1>
-        <p className="text-[#8B8BA7] mb-6">Solo los organizadores pueden gestionar entradas y cobros.</p>
+        <h1 className="text-2xl font-bold text-white mb-4">Dashboard</h1>
+        <p className="text-[#8B8BA7] mb-6">¿Quieres crear eventos? Solicita ser organizador.</p>
         {role === 'user' && <Button onClick={async () => {
           try {
             const { error: roleErr } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' })
