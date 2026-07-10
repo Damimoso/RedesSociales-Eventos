@@ -125,8 +125,61 @@ export default function Events() {
       </div>
 
       {geo.position && (
-        <div className="h-[300px] mb-6 rounded-xl overflow-hidden border border-gray-200">
+        <div className="h-[400px] mb-6 rounded-xl overflow-hidden border border-gray-200 relative">
           <EventMap events={events} center={geo.position} onEventClick={handleEventClick} />
+
+          {/* Filtros flotantes sobre el mapa */}
+          <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center gap-2 pointer-events-none">
+            <div className="pointer-events-auto flex flex-wrap gap-1 bg-white/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-white/50">
+              {(['today', 'weekend', 'week', 'month'] as const).map(d => (
+                <button key={d} onClick={() => setQuickDate(quickDate === d ? '' : d)}
+                  className={`text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors ${
+                    quickDate === d
+                      ? 'bg-[#7C5CFC] text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {d === 'today' ? 'Hoy' : d === 'weekend' ? 'Finde' : d === 'week' ? 'Semana' : 'Mes'}
+                </button>
+              ))}
+            </div>
+
+            <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-white/50 flex items-center gap-1">
+              <select value={category} onChange={e => setCategory(e.target.value)}
+                className="text-xs bg-transparent border-none px-2 py-1.5 rounded focus:outline-none text-gray-600"
+              >
+                <option value="">Categoría</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <span className="text-gray-300">|</span>
+              <select value={city} onChange={e => setCity(e.target.value)}
+                className="text-xs bg-transparent border-none px-2 py-1.5 rounded focus:outline-none text-gray-600"
+              >
+                <option value="">Ciudad</option>
+                {cities.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-white/50 flex items-center gap-1 text-xs">
+              <input type="date" value={customDateFrom} onChange={e => { setCustomDateFrom(e.target.value); setQuickDate('') }}
+                className="w-28 bg-transparent border-none px-1 py-1.5 rounded focus:outline-none text-gray-600 text-xs" />
+              <span className="text-gray-400">→</span>
+              <input type="date" value={customDateTo} onChange={e => { setCustomDateTo(e.target.value); setQuickDate('') }}
+                className="w-28 bg-transparent border-none px-1 py-1.5 rounded focus:outline-none text-gray-600 text-xs" />
+            </div>
+
+            {hasFilters && (
+              <button onClick={clearFilters}
+                className="pointer-events-auto text-[10px] font-medium bg-red-50 text-red-500 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors border border-red-200">
+                Limpiar
+              </button>
+            )}
+          </div>
+
+          {/* Contador de eventos */}
+          <div className="absolute bottom-3 right-3 z-10 bg-[#1A1A2E]/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
+            {events.length} {events.length === 1 ? 'evento' : 'eventos'}
+          </div>
         </div>
       )}
 

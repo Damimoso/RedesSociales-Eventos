@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
@@ -8,6 +8,8 @@ import { FollowButton } from '@/components/events/FollowButton'
 import { loadStripe } from '@stripe/stripe-js'
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js'
 import { centsToEur } from '@/lib/format'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
@@ -33,6 +35,8 @@ type EventDetail = {
   organizer_name: string
   organizer_id: string
   category_name: string | null
+  lat: number
+  lng: number
 }
 
 type TicketTier = {
@@ -67,6 +71,7 @@ export default function EventDetail() {
             address, city, province, country,
             start_date, end_date, is_free, price, currency,
             max_capacity, remaining_capacity, tags,
+            location,
             organizer:organizer_id(org_name),
             category:category_id(name)
           `).eq('id', id).single(),
@@ -76,12 +81,14 @@ export default function EventDetail() {
         if (cancelled) return
         if (!eventRes.error && eventRes.data) {
           const d = eventRes.data as any
+          const coords = d.location?.coordinates ?? [0, 0]
           setEvent({
             id: d.id, title: d.title, description: d.description, short_description: d.short_description,
             cover_image_url: d.cover_image_url, address: d.address, city: d.city, province: d.province,
             country: d.country, start_date: d.start_date, end_date: d.end_date, is_free: d.is_free,
             price: d.price, currency: d.currency, max_capacity: d.max_capacity, remaining_capacity: d.remaining_capacity,
-            tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', organizer_id: d.organizer_id, category_name: d.category?.name ?? null,
+            tags: d.tags, organizer_name: d.organizer?.org_name ?? 'Desconocido', organizer_id: d.organizer_id,
+            category_name: d.category?.name ?? null, lat: coords[1], lng: coords[0],
           })
         }
         if (!tiersRes.error && tiersRes.data) {
@@ -163,6 +170,20 @@ export default function EventDetail() {
             <p className="text-gray-400 text-xs">Ubicación</p>
             <p className="font-medium">{event.address}</p>
             <p className="text-gray-500">{event.city}{event.province ? `, ${event.province}` : ''}</p>
+            {event.lat !== 0 && (
+              <div className="mt-2 h-[120px] rounded-lg overflow-hidden" ref={el => {
+                if (!el || event.lat === 0) return
+                const map = new maplibregl.Map({
+                  container: el, style: 'https://tiles.openfreemap.org/styles/liberty',
+                  center: [event.lng, event.lat], zoom: 13,
+                  interactive: false, attributionControl: false,
+                })
+                map.on('load', () => {
+                  new maplibregl.Marker({ color: '#7C5CFC' })
+                    .setLngLat([event.lng, event.lat]).addTo(map)
+                })
+              }} />
+            )}
           </div>
         </div>
 
