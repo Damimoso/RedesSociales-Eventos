@@ -187,7 +187,14 @@ export default function Events() {
         <LoadingSpinner />
       ) : events.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-400 mb-4">No se encontraron eventos con esos filtros</p>
+          <p className="text-gray-400 mb-4">
+            {(() => {
+              const isSingleDay = quickDate === 'today' || (customDateFrom && customDateFrom === customDateTo)
+              const hasDateFilter = !!(quickDate || customDateFrom || customDateTo)
+              if (hasDateFilter) return isSingleDay ? 'No hay eventos previstos para esta fecha' : 'No hay eventos previstos para estas fechas'
+              return 'No se encontraron eventos con esos filtros'
+            })()}
+          </p>
           {hasFilters && <Button variant="outline" onClick={clearFilters}>Limpiar filtros</Button>}
           {!hasFilters && radius < 200 && (
             <Button variant="outline" onClick={() => setRadius(200)}>Ampliar radio a 200 km</Button>
