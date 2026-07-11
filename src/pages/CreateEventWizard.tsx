@@ -135,9 +135,9 @@ export default function CreateEventWizard() {
     navigate(`/events/${event.id}?creado=ok`)
   }
 
-  if (!user) return <p className="text-center text-[#8B8BA7] py-16">Inicia sesión para crear eventos</p>
+  if (!user) return <p className="text-center text-[#8BA4B8] py-16">Inicia sesión para crear eventos</p>
   if (!orgId && categories.length === 0) return <LoadingSpinner />
-  if (!orgId) return <p className="text-center text-[#8B8BA7] py-16">No tienes perfil de organizador. Solicítalo desde el dashboard.</p>
+  if (!orgId) return <p className="text-center text-[#8BA4B8] py-16">No tienes perfil de organizador. Solicítalo desde el dashboard.</p>
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -147,14 +147,14 @@ export default function CreateEventWizard() {
           <div key={s.step} className="flex items-center gap-2">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               step === s.step
-                ? 'bg-[#7C5CFC]/20 text-[#7C5CFC] border border-[#7C5CFC]/30'
+                ? 'bg-[#0077B6]/20 text-[#0077B6] border border-[#0077B6]/30'
                 : step > s.step
                   ? 'bg-[#34D399]/20 text-[#34D399]'
-                  : 'bg-white/5 text-[#8B8BA7]'
+                  : 'bg-white/5 text-[#8BA4B8]'
             }`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === s.step ? 'bg-[#7C5CFC] text-white' :
-                step > s.step ? 'bg-[#34D399] text-white' : 'bg-white/10 text-[#8B8BA7]'
+                step === s.step ? 'bg-[#0077B6] text-white' :
+                step > s.step ? 'bg-[#34D399] text-white' : 'bg-white/10 text-[#8BA4B8]'
               }`}>
                 {step > s.step ? '✓' : s.step}
               </span>
@@ -166,55 +166,55 @@ export default function CreateEventWizard() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FF6B9D] mb-6">{error}</div>
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FFD100] mb-6">{error}</div>
       )}
 
       {/* ===== STEP 1: INFO BÁSICA ===== */}
       {step === 1 && (
-        <div className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 space-y-4">
+        <div className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-xl p-6 space-y-4">
           <h2 className="text-lg font-bold text-white">Información del evento</h2>
 
           <div>
-            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Título del evento *</label>
+            <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Título del evento *</label>
             <input type="text" required value={form.title} onChange={e => update({ title: e.target.value })}
               placeholder="Ej: Concierto de Laura Music en Santa Catalina"
-              className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC] transition-colors" />
+              className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6] transition-colors" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Descripción</label>
+            <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Descripción</label>
             <textarea value={form.description} onChange={e => update({ description: e.target.value })}
               rows={4} placeholder="Cuéntale a la gente de qué va..."
-              className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC] transition-colors resize-none" />
+              className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6] transition-colors resize-none" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Categoría</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Categoría</label>
               <select value={form.category_id} onChange={e => update({ category_id: e.target.value })}
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC]">
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6]">
                 <option value="">Sin categoría</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Etiquetas</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Etiquetas</label>
               <input type="text" value={form.tags} onChange={e => update({ tags: e.target.value })}
                 placeholder="música, benéfico, familia"
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
-              <p className="text-[10px] text-[#8B8BA7] mt-1">Separadas por comas</p>
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6]" />
+              <p className="text-[10px] text-[#8BA4B8] mt-1">Separadas por comas</p>
             </div>
           </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">URL de imagen de portada</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">URL de imagen de portada</label>
               <input type="url" value={form.cover_image_url} onChange={e => update({ cover_image_url: e.target.value })}
                 placeholder="https://ejemplo.com/imagen.jpg"
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6]" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-2">Artistas participantes</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-2">Artistas participantes</label>
               <div className="flex gap-2 mb-2">
                 <input type="text" value={artistSearch} onChange={async e => {
                   setArtistSearch(e.target.value)
@@ -225,11 +225,11 @@ export default function CreateEventWizard() {
                   setSearchingArtist(false)
                 }}
                   placeholder="Buscar artista por nombre..."
-                  className="flex-1 bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+                  className="flex-1 bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6]" />
               </div>
-              {searchingArtist && <p className="text-xs text-[#8B8BA7] mb-1">Buscando...</p>}
+              {searchingArtist && <p className="text-xs text-[#8BA4B8] mb-1">Buscando...</p>}
               {artistResults.length > 0 && (
-                <div className="bg-[#0F0F1A] border border-white/10 rounded-lg mb-2 overflow-hidden">
+                <div className="bg-[#071521] border border-white/10 rounded-lg mb-2 overflow-hidden">
                   {artistResults.filter(a => !selectedArtists.find(s => s.id === a.id)).map(a => (
                     <button key={a.id} type="button" onClick={() => { setSelectedArtists([...selectedArtists, a]); setArtistSearch(''); setArtistResults([]) }}
                       className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors">
@@ -241,7 +241,7 @@ export default function CreateEventWizard() {
               {selectedArtists.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {selectedArtists.map(a => (
-                    <span key={a.id} className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-[#7C5CFC]/20 text-[#7C5CFC]">
+                    <span key={a.id} className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-[#0077B6]/20 text-[#0077B6]">
                       {a.stage_name}
                       <button type="button" onClick={() => setSelectedArtists(selectedArtists.filter(s => s.id !== a.id))}
                         className="hover:text-white transition-colors">×</button>
@@ -255,43 +255,43 @@ export default function CreateEventWizard() {
 
       {/* ===== STEP 2: FECHA Y UBICACIÓN ===== */}
       {step === 2 && (
-        <div className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 space-y-4">
+        <div className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-xl p-6 space-y-4">
           <h2 className="text-lg font-bold text-white">Fecha y ubicación</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Fecha y hora de inicio *</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Fecha y hora de inicio *</label>
               <input type="datetime-local" required value={form.start_date} onChange={e => update({ start_date: e.target.value })}
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC] [color-scheme:dark]" />
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6] [color-scheme:dark]" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Fecha y hora de fin *</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Fecha y hora de fin *</label>
               <input type="datetime-local" required value={form.end_date} onChange={e => update({ end_date: e.target.value })}
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#7C5CFC] [color-scheme:dark]" />
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6] [color-scheme:dark]" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Ciudad *</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Ciudad *</label>
               <input type="text" required value={form.city} onChange={e => update({ city: e.target.value })}
                 placeholder="Las Palmas de Gran Canaria"
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6]" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Dirección *</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Dirección *</label>
               <input type="text" required value={form.address} onChange={e => update({ address: e.target.value })}
                 placeholder="Calle Mayor, 123"
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8B8BA7]/50 focus:outline-none focus:border-[#7C5CFC]" />
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-[#8BA4B8]/50 focus:outline-none focus:border-[#0077B6]" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#8B8BA7] mb-2">Selecciona la ubicación en el mapa *</label>
+            <label className="block text-sm font-medium text-[#8BA4B8] mb-2">Selecciona la ubicación en el mapa *</label>
             {geo.position && (
               <LocationPicker center={geo.position} value={location} onChange={setLocation} />
             )}
-            {!location && <p className="text-xs text-[#8B8BA7] mt-1">Haz clic en el mapa para colocar el marcador</p>}
+            {!location && <p className="text-xs text-[#8BA4B8] mt-1">Haz clic en el mapa para colocar el marcador</p>}
           </div>
         </div>
       )}
@@ -299,35 +299,35 @@ export default function CreateEventWizard() {
       {/* ===== STEP 3: ENTRADAS ===== */}
       {step === 3 && (
         <div className="space-y-4">
-          <div className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 space-y-4">
+          <div className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-white">Tipos de entrada</h2>
 
               {tiers.map((tier, i) => (
-              <div key={tier._key} className="flex items-end gap-3 bg-[#0F0F1A] rounded-lg p-4 border border-white/5">
+              <div key={tier._key} className="flex items-end gap-3 bg-[#071521] rounded-lg p-4 border border-white/5">
                 <div className="flex-1">
-                  <label className="block text-[11px] font-medium text-[#8B8BA7] mb-1">Nombre</label>
+                  <label className="block text-[11px] font-medium text-[#8BA4B8] mb-1">Nombre</label>
                   <input type="text" value={tier.name} onChange={e => {
                     const next = [...tiers]; next[i] = { ...next[i], name: e.target.value }; setTiers(next)
                   }} placeholder="General"
-                  className="w-full bg-[#1A1A2E] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#0D2137] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
                 </div>
                 <div className="w-24">
-                  <label className="block text-[11px] font-medium text-[#8B8BA7] mb-1">Precio (€)</label>
+                  <label className="block text-[11px] font-medium text-[#8BA4B8] mb-1">Precio (€)</label>
                   <input type="number" min={0} step={0.01} value={tier.price_eur} onChange={e => {
                     const next = [...tiers]; next[i] = { ...next[i], price_eur: e.target.value }; setTiers(next)
                   }} placeholder="0.00"
-                  className="w-full bg-[#1A1A2E] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#0D2137] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
                 </div>
                 <div className="w-24">
-                  <label className="block text-[11px] font-medium text-[#8B8BA7] mb-1">Cantidad</label>
+                  <label className="block text-[11px] font-medium text-[#8BA4B8] mb-1">Cantidad</label>
                   <input type="number" min={1} value={tier.quantity} onChange={e => {
                     const next = [...tiers]; next[i] = { ...next[i], quantity: e.target.value }; setTiers(next)
                   }} placeholder="100"
-                  className="w-full bg-[#1A1A2E] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#0D2137] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
                 </div>
                 {tiers.length > 1 && (
                   <button type="button" onClick={() => setTiers(tiers.filter((_, j) => j !== i))}
-                    className="text-[#FF6B9D] hover:text-white transition-colors p-2">
+                    className="text-[#FFD100] hover:text-white transition-colors p-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 )}
@@ -339,29 +339,29 @@ export default function CreateEventWizard() {
             </Button>
           </div>
 
-          <div className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-xl p-6 space-y-4">
+          <div className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-white">Publicar</h2>
 
             <div className="flex gap-3">
               <button type="button" onClick={() => setPublishMode('draft')}
                 className={`flex-1 rounded-lg border p-4 text-center transition-all ${
                   publishMode === 'draft'
-                    ? 'border-[#7C5CFC]/50 bg-[#7C5CFC]/10 text-white'
-                    : 'border-white/10 text-[#8B8BA7] hover:border-white/20'
+                    ? 'border-[#0077B6]/50 bg-[#0077B6]/10 text-white'
+                    : 'border-white/10 text-[#8BA4B8] hover:border-white/20'
                 }`}>
                 <span className="text-2xl block mb-1">📝</span>
                 <span className="text-sm font-medium">Guardar borrador</span>
-                <p className="text-[11px] text-[#8B8BA7] mt-1">Nadie lo verá hasta que lo publiques</p>
+                <p className="text-[11px] text-[#8BA4B8] mt-1">Nadie lo verá hasta que lo publiques</p>
               </button>
               <button type="button" onClick={() => setPublishMode('published')}
                 className={`flex-1 rounded-lg border p-4 text-center transition-all ${
                   publishMode === 'published'
                     ? 'border-[#34D399]/50 bg-[#34D399]/10 text-white'
-                    : 'border-white/10 text-[#8B8BA7] hover:border-white/20'
+                    : 'border-white/10 text-[#8BA4B8] hover:border-white/20'
                 }`}>
                 <span className="text-2xl block mb-1">🌍</span>
                 <span className="text-sm font-medium">Publicar ahora</span>
-                <p className="text-[11px] text-[#8B8BA7] mt-1">Visible para todos al instante</p>
+                <p className="text-[11px] text-[#8BA4B8] mt-1">Visible para todos al instante</p>
               </button>
             </div>
           </div>
@@ -386,7 +386,7 @@ export default function CreateEventWizard() {
             </Button>
           ) : (
             <Button onClick={handleSubmit} loading={submitting} size="lg"
-              style={{ background: publishMode === 'published' ? 'linear-gradient(135deg, #7C5CFC, #FF6B9D)' : undefined }}>
+              style={{ background: publishMode === 'published' ? 'linear-gradient(135deg, #0077B6, #FFD100)' : undefined }}>
               {publishMode === 'published' ? '🚀 Publicar evento' : '💾 Guardar borrador'}
             </Button>
           )}

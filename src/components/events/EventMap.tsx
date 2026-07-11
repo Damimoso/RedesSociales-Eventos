@@ -95,7 +95,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
       if (!map.hasImage(id)) map.addImage(id, img)
     }
     addPinImg('pin-free', '#34D399')
-    addPinImg('pin-paid', '#7C5CFC')
+    addPinImg('pin-paid', '#0077B6')
 
     const features = valid.map(e => ({
       type: 'Feature' as const,
@@ -121,7 +121,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
       filter: ['has', 'point_count'],
       paint: {
         'circle-color': ['step', ['get', 'point_count'],
-          '#7C5CFC', 5, '#FF6B9D', 15, '#EF4444'],
+          '#0077B6', 5, '#FFD100', 15, '#EF4444'],
         'circle-radius': ['step', ['get', 'point_count'], 18, 5, 26, 15, 34],
         'circle-opacity': 0.85,
         'circle-stroke-width': 3,
@@ -205,7 +205,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
             <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">
               ${props.organizer_name}
             </div>
-            <div style="font-size: 11px; font-weight: 600; color: ${props.is_free ? '#10B981' : '#7C5CFC'}; margin-top: 4px;">
+            <div style="font-size: 11px; font-weight: 600; color: ${props.is_free ? '#10B981' : '#0077B6'}; margin-top: 4px;">
               ${props.is_free ? 'Gratuito' : 'Desde ' + (props.price / 100).toFixed(2) + ' €'}
             </div>
           </div>

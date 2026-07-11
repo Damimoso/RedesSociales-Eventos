@@ -25,7 +25,7 @@ export default function Home() {
     return (
       <div className="text-center py-20">
         <LoadingSpinner size="lg" />
-        <p className="text-[#8B8BA7] mt-4">Buscando eventos cerca de ti...</p>
+        <p className="text-[#8BA4B8] mt-4">Buscando eventos cerca de ti...</p>
       </div>
     )
   }
@@ -40,11 +40,11 @@ export default function Home() {
             <h2 className="text-xl font-bold text-white">Eventos cercanos</h2>
             <StreakBadge />
           </div>
-          <span className="text-xs text-[#8B8BA7]">Radio 25 km</span>
+          <span className="text-xs text-[#8BA4B8]">Radio 25 km</span>
         </div>
 
         {geo.position && (
-          <div className="h-[300px] mb-6 rounded-xl overflow-hidden border border-[rgba(124,92,252,0.1)]">
+          <div className="h-[300px] mb-6 rounded-xl overflow-hidden border border-[rgba(0,119,182,0.1)]">
             <EventMap events={events} center={geo.position} onEventClick={handleEventClick} />
           </div>
         )}
@@ -52,7 +52,7 @@ export default function Home() {
         {loading ? (
           <LoadingSpinner />
         ) : events.length === 0 ? (
-          <p className="text-[#8B8BA7] text-sm text-center">No hay eventos cerca. <Link to="/events" className="text-[#7C5CFC] underline">Explorar todos</Link></p>
+          <p className="text-[#8BA4B8] text-sm text-center">No hay eventos cerca. <Link to="/events" className="text-[#0077B6] underline">Explorar todos</Link></p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.slice(0, 6).map(e => <EventCard key={e.id} event={e} />)}
@@ -73,7 +73,7 @@ export default function Home() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Siguiendo</h2>
-            <span className="text-xs text-[#8B8BA7]">Eventos de tus artistas y organizadores</span>
+            <span className="text-xs text-[#8BA4B8]">Eventos de tus artistas y organizadores</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {feed.slice(0, 6).map(e => <EventCard key={e.id} event={{...e, short_description: e.short_description ?? '', province: null, distance_km: 0, lat: 0, lng: 0, category_name: null, max_capacity: 0, remaining_capacity: 0, currency: 'EUR', end_date: e.end_date}} />)}

@@ -94,7 +94,7 @@ export default function ArtistProfile() {
   }, [id, form])
 
   if (loading) return <LoadingSpinner />
-  if (!artist) return <p className="text-center text-[#8B8BA7] py-16">Artista no encontrado</p>
+  if (!artist) return <p className="text-center text-[#8BA4B8] py-16">Artista no encontrado</p>
 
   const socialLinks = artist.social_links ?? {}
   const futureEvents = schedule.filter(e => new Date(e.start_date) >= new Date())
@@ -102,11 +102,11 @@ export default function ArtistProfile() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-gradient-to-br from-[#1A1A2E] to-[#16213E] rounded-2xl p-8 border border-[rgba(124,92,252,0.2)] mb-8">
+      <div className="bg-gradient-to-br from-[#0D2137] to-[#0A1929] rounded-2xl p-8 border border-[rgba(0,119,182,0.2)] mb-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #7C5CFC, #FF6B9D)', color: '#fff' }}>
+              style={{ background: 'linear-gradient(135deg, #0077B6, #FFD100)', color: '#fff' }}>
               {artist.stage_name[0].toUpperCase()}
             </div>
             <div>
@@ -117,7 +117,7 @@ export default function ArtistProfile() {
               {artist.genre && artist.genre.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
                   {artist.genre.map(g => (
-                    <span key={g} className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#7C5CFC]/20 text-[#7C5CFC]">{g}</span>
+                    <span key={g} className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#0077B6]/20 text-[#0077B6]">{g}</span>
                   ))}
                 </div>
               )}
@@ -138,47 +138,47 @@ export default function ArtistProfile() {
         {editing ? (
           <div className="mt-6 space-y-3 border-t border-white/10 pt-6">
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Nombre artístico</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Nombre artístico</label>
               <input type="text" value={form.stage_name} onChange={e => setForm(f => ({ ...f, stage_name: e.target.value }))}
-                className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Biografía</label>
+              <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Biografía</label>
               <textarea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-                rows={4} className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC] resize-none" />
+                rows={4} className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6] resize-none" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Géneros (separados por coma)</label>
+                <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Géneros (separados por coma)</label>
                 <input type="text" value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}
                   placeholder="pop, rock, jazz"
-                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Web</label>
+                <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Web</label>
                 <input type="url" value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
                   placeholder="https://..."
-                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Spotify</label>
+                <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Spotify</label>
                 <input type="url" value={form.spotify} onChange={e => setForm(f => ({ ...f, spotify: e.target.value }))}
                   placeholder="https://open.spotify.com/..."
-                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">YouTube</label>
+                <label className="block text-sm font-medium text-[#8BA4B8] mb-1">YouTube</label>
                 <input type="url" value={form.youtube} onChange={e => setForm(f => ({ ...f, youtube: e.target.value }))}
                   placeholder="https://youtube.com/@..."
-                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#8B8BA7] mb-1">Instagram</label>
+                <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Instagram</label>
                 <input type="url" value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))}
                   placeholder="https://instagram.com/..."
-                  className="w-full bg-[#0F0F1A] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#7C5CFC]" />
+                  className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
               </div>
             </div>
             <div className="flex justify-end pt-2">
@@ -187,13 +187,13 @@ export default function ArtistProfile() {
           </div>
         ) : (
           <>
-            {artist.bio && <p className="text-[#B0B0C8] mt-4 text-sm leading-relaxed">{artist.bio}</p>}
+            {artist.bio && <p className="text-[#B8C9D8] mt-4 text-sm leading-relaxed">{artist.bio}</p>}
 
             {(artist.website || Object.keys(socialLinks).length > 0) && (
               <div className="flex flex-wrap gap-3 mt-4">
                 {artist.website && (
                   <a href={artist.website} target="_blank" rel="noopener noreferrer"
-                    className="text-xs flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/10 text-[#B0B0C8] hover:bg-white/20 hover:text-white transition-colors">
+                    className="text-xs flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/10 text-[#B8C9D8] hover:bg-white/20 hover:text-white transition-colors">
                     🌐 Web
                   </a>
                 )}
@@ -225,20 +225,20 @@ export default function ArtistProfile() {
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-white mb-4">Próximos eventos</h2>
         {futureEvents.length === 0 ? (
-          <p className="text-[#8B8BA7] text-sm">No hay eventos próximos</p>
+          <p className="text-[#8BA4B8] text-sm">No hay eventos próximos</p>
         ) : (
           <div className="space-y-2">
             {futureEvents.map(e => (
               <Link key={e.event_id} to={`/events/${e.event_id}`}
-                className="block bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 hover:border-[rgba(124,92,252,0.3)] transition-colors">
+                className="block bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4 hover:border-[rgba(0,119,182,0.3)] transition-colors">
                 <div className="flex items-center gap-3">
                   {e.cover_image_url && <img src={e.cover_image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />}
                   <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-sm text-white truncate">{e.title}</h3>
-                    <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {e.city}</p>
-                    {e.stage_time && <p className="text-xs text-[#7C5CFC]">Actuación: {new Date(e.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
+                    <p className="text-xs text-[#8BA4B8]">{new Date(e.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {e.city}</p>
+                    {e.stage_time && <p className="text-xs text-[#0077B6]">Actuación: {new Date(e.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
-                  <span className="text-xs text-[#8B8BA7]">{e.organizer_name}</span>
+                  <span className="text-xs text-[#8BA4B8]">{e.organizer_name}</span>
                 </div>
               </Link>
             ))}
@@ -253,13 +253,13 @@ export default function ArtistProfile() {
           <div className="space-y-2 opacity-60">
             {pastEvents.slice(0, 5).map(e => (
               <Link key={e.event_id} to={`/events/${e.event_id}`}
-                className="block bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 hover:border-[rgba(124,92,252,0.3)] transition-colors">
+                className="block bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4 hover:border-[rgba(0,119,182,0.3)] transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-sm text-white truncate">{e.title}</h3>
-                    <p className="text-xs text-[#8B8BA7]">{new Date(e.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {e.city}</p>
+                    <p className="text-xs text-[#8BA4B8]">{new Date(e.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {e.city}</p>
                   </div>
-                  <span className="text-xs text-[#8B8BA7]">{e.organizer_name}</span>
+                  <span className="text-xs text-[#8BA4B8]">{e.organizer_name}</span>
                 </div>
               </Link>
             ))}

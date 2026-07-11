@@ -10,11 +10,11 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary: 'bg-[#7C5CFC] text-white hover:bg-[#6B4DE6] shadow-xs',
-  secondary: 'bg-[#232346] text-[#F1F1F6] hover:bg-[#2D2D54]',
-  outline: 'border border-[rgba(124,92,252,0.3)] text-[#7C5CFC] hover:bg-[rgba(124,92,252,0.1)]',
-  ghost: 'text-[#8B8BA7] hover:bg-white/5',
-  danger: 'bg-[#FF6B9D] text-white hover:bg-[#E55A8A] shadow-xs',
+  primary: 'bg-[#0077B6] text-white hover:bg-[#005A9E] shadow-xs',
+  secondary: 'bg-[#162D47] text-[#F1F6FA] hover:bg-[#1E3A5C]',
+  outline: 'border border-[rgba(0,119,182,0.3)] text-[#0077B6] hover:bg-[rgba(0,119,182,0.1)]',
+  ghost: 'text-[#8BA4B8] hover:bg-white/5',
+  danger: 'bg-[#FFD100] text-white hover:bg-[#E6BC00] shadow-xs',
 }
 
 const sizeStyles: Record<Size, string> = {
@@ -34,7 +34,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#7C5CFC] focus:ring-offset-2 focus:ring-offset-[#0F0F1A] disabled:opacity-50 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0077B6] focus:ring-offset-2 focus:ring-offset-[#071521] disabled:opacity-50 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >

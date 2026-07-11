@@ -109,7 +109,7 @@ export function QrValidator() {
       case 'VALID': return 'bg-[#34D399]/20 text-[#34D399] border-[#34D399]/30'
       case 'EXPIRED': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
       case 'ALREADY_USED': return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-      default: return 'bg-red-500/20 text-[#FF6B9D] border-red-500/30'
+      default: return 'bg-red-500/20 text-[#FFD100] border-red-500/30'
     }
   }
 
@@ -148,17 +148,17 @@ export function QrValidator() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FF6B9D]">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FFD100]">
           {error}
         </div>
       )}
 
-      <div id={CAMERA_ID} className={`w-full rounded-xl overflow-hidden border ${scanning ? 'border-[#7C5CFC]/30' : 'border-white/10'} ${!scanning && !result.status ? 'bg-[#1A1A2E]' : ''}`}>
+      <div id={CAMERA_ID} className={`w-full rounded-xl overflow-hidden border ${scanning ? 'border-[#0077B6]/30' : 'border-white/10'} ${!scanning && !result.status ? 'bg-[#0D2137]' : ''}`}>
         {!scanning && !result.status && !error && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <span className="text-5xl mb-4">📸</span>
-            <p className="text-[#8B8BA7] text-sm">Pulsa "Escanear QR" y enfoca el código</p>
-            <p className="text-[#8B8BA7] text-xs mt-1">de la entrada del usuario</p>
+            <p className="text-[#8BA4B8] text-sm">Pulsa "Escanear QR" y enfoca el código</p>
+            <p className="text-[#8BA4B8] text-xs mt-1">de la entrada del usuario</p>
           </div>
         )}
       </div>

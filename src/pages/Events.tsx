@@ -135,7 +135,7 @@ export default function Events() {
                 <button key={d} onClick={() => setQuickDate(quickDate === d ? '' : d)}
                   className={`text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors ${
                     quickDate === d
-                      ? 'bg-[#7C5CFC] text-white'
+                      ? 'bg-[#0077B6] text-white'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
@@ -177,7 +177,7 @@ export default function Events() {
           </div>
 
           {/* Contador de eventos */}
-          <div className="absolute bottom-3 right-3 z-10 bg-[#1A1A2E]/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
+          <div className="absolute bottom-3 right-3 z-10 bg-[#0D2137]/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
             {events.length} {events.length === 1 ? 'evento' : 'eventos'}
           </div>
         </div>

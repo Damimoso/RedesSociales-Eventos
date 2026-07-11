@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-evento-bg: #0F0F1A;
-  --color-evento-surface: #1A1A2E;
-  --color-evento-elevated: #232346;
-  --color-evento-primary: #7C5CFC;
-  --color-evento-secondary: #FF6B9D;
+  --color-evento-bg: #071521;
+  --color-evento-surface: #0D2137;
+  --color-evento-elevated: #162D47;
+  --color-evento-primary: #0077B6;
+  --color-evento-secondary: #FFD100;
   --color-evento-success: #34D399;
-  --color-evento-text: #F1F1F6;
-  --color-evento-muted: #8B8BA7;
-  --color-evento-border: rgba(124, 92, 252, 0.1);
+  --color-evento-text: #F1F6FA;
+  --color-evento-muted: #8BA4B8;
+  --color-evento-border: rgba(0, 119, 182, 0.1);
 }
 
 @keyframes heartBeat {
@@ -29,12 +29,11 @@
 .animate-streak-pulse { animation: streakPulse 2s ease-in-out infinite; }
 
 body {
-  background-color: #0F0F1A;
-  color: #F1F1F6;
+  background-color: #071521;
+  color: #F1F6FA;
 }
 
-/* Scrollbar personalizado */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #1A1A2E; }
-::-webkit-scrollbar-thumb { background: #232346; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #7C5CFC; }
+::-webkit-scrollbar-track { background: #0D2137; }
+::-webkit-scrollbar-thumb { background: #162D47; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #0077B6; }

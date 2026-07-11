@@ -71,7 +71,7 @@ export function ArtistDashboardSection({ userId }: Props) {
 
   if (error) return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-[#1A1A2E] border border-red-500/30 rounded-lg p-6 text-center">
+      <div className="bg-[#0D2137] border border-red-500/30 rounded-lg p-6 text-center">
         <p className="text-red-400 text-sm mb-3">{error}</p>
         <Button size="sm" onClick={() => { setLoading(true); load() }}>Reintentar</Button>
       </div>
@@ -92,20 +92,20 @@ export function ArtistDashboardSection({ userId }: Props) {
       {/* Invitaciones pendientes */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-white mb-4">
-          Invitaciones {pending.length > 0 && <span className="text-[#FF6B9D] text-sm">({pending.length} pendientes)</span>}
+          Invitaciones {pending.length > 0 && <span className="text-[#FFD100] text-sm">({pending.length} pendientes)</span>}
         </h2>
         {pending.length === 0 ? (
-          <p className="text-[#8B8BA7] text-sm">No tienes invitaciones pendientes</p>
+          <p className="text-[#8BA4B8] text-sm">No tienes invitaciones pendientes</p>
         ) : (
           <div className="space-y-2">
             {pending.map(inv => (
-              <div key={inv.id} className="bg-[#1A1A2E] border border-[#FF6B9D]/30 rounded-lg p-4">
+              <div key={inv.id} className="bg-[#0D2137] border border-[#FFD100]/30 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-medium text-sm text-white">{inv.event_title}</h3>
-                    <p className="text-xs text-[#8B8BA7]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
-                    <p className="text-xs text-[#8B8BA7]">Organiza: {inv.organizer_name}</p>
-                    {inv.stage_time && <p className="text-xs text-[#7C5CFC]">Actuación: {new Date(inv.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
+                    <p className="text-xs text-[#8BA4B8]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
+                    <p className="text-xs text-[#8BA4B8]">Organiza: {inv.organizer_name}</p>
+                    {inv.stage_time && <p className="text-xs text-[#0077B6]">Actuación: {new Date(inv.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button size="sm" onClick={() => respond(inv.id, true)}>Aceptar</Button>
@@ -122,16 +122,16 @@ export function ArtistDashboardSection({ userId }: Props) {
       <section className="mb-8">
         <h2 className="text-lg font-semibold text-white mb-4">Tus próximos eventos</h2>
         {accepted.length === 0 ? (
-          <p className="text-[#8B8BA7] text-sm">No tienes eventos confirmados</p>
+          <p className="text-[#8BA4B8] text-sm">No tienes eventos confirmados</p>
         ) : (
           <div className="space-y-2">
             {accepted.map(inv => (
               <Link key={inv.id} to={`/events/${inv.event_id}`}
-                className="block bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4 hover:border-[rgba(124,92,252,0.3)] transition-colors">
+                className="block bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4 hover:border-[rgba(0,119,182,0.3)] transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-sm text-white truncate">{inv.event_title}</h3>
-                    <p className="text-xs text-[#8B8BA7]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
+                    <p className="text-xs text-[#8BA4B8]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
                   </div>
                   <span className="text-xs text-[#34D399]">✓ Confirmado</span>
                 </div>
@@ -147,13 +147,13 @@ export function ArtistDashboardSection({ userId }: Props) {
           <h2 className="text-lg font-semibold text-white mb-4">Rechazados</h2>
           <div className="space-y-2 opacity-50">
             {rejected.map(inv => (
-              <div key={inv.id} className="bg-[#1A1A2E] border border-[rgba(124,92,252,0.1)] rounded-lg p-4">
+              <div key={inv.id} className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-sm text-white truncate">{inv.event_title}</h3>
-                    <p className="text-xs text-[#8B8BA7]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
+                    <p className="text-xs text-[#8BA4B8]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
                   </div>
-                  <span className="text-xs text-[#FF6B9D]">Rechazado</span>
+                  <span className="text-xs text-[#FFD100]">Rechazado</span>
                 </div>
               </div>
             ))}

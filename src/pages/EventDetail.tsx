@@ -126,7 +126,7 @@ export default function EventDetail() {
       center: [event.lng, event.lat], zoom: 13,
       interactive: false, attributionControl: false,
     })
-    map.on('load', () => new maplibregl.Marker({ color: '#7C5CFC' }).setLngLat([event.lng, event.lat]).addTo(map))
+    map.on('load', () => new maplibregl.Marker({ color: '#0077B6' }).setLngLat([event.lng, event.lat]).addTo(map))
     miniMapRef.current = map
     return () => { map.remove(); miniMapRef.current = null }
   }, [event?.lat, event?.lng])

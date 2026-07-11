@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-[#7C5CFC] text-white rounded-xl hover:bg-[#6B4DE6] transition-colors text-sm font-medium"
+            className="px-6 py-2 bg-[#0077B6] text-white rounded-xl hover:bg-[#005A9E] transition-colors text-sm font-medium"
           >
             Recargar página
           </button>

@@ -39,7 +39,7 @@ export function AchievementGrid() {
           <div key={a.key}
             className={`relative flex flex-col items-center gap-1 rounded-xl p-3 text-center transition-all ${
               has
-                ? 'bg-gradient-to-b from-[#7C5CFC]/20 to-transparent border border-[#7C5CFC]/30'
+                ? 'bg-gradient-to-b from-[#0077B6]/20 to-transparent border border-[#0077B6]/30'
                 : 'bg-white/5 border border-white/10 opacity-40 grayscale'
             }`}
           >
