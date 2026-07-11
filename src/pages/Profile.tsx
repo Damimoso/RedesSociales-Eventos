@@ -23,7 +23,7 @@ export default function Profile() {
     let cancelled = false; (async () => {
       try {
         const [profileRes, rolesRes] = await Promise.all([
-          supabase.from('profiles').select('display_name, avatar_url, phone').eq('id', user.id).single(),
+          supabase.from('profiles').select('display_name, avatar_url, phone').eq('id', user.id).maybeSingle(),
           supabase.from('user_roles').select('role').eq('user_id', user.id),
         ])
         if (cancelled) return
