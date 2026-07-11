@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 @theme {
-  --color-evento-bg: #071521;
-  --color-evento-surface: #0D2137;
-  --color-evento-elevated: #162D47;
-  --color-evento-primary: #0077B6;
-  --color-evento-secondary: #FFD100;
-  --color-evento-success: #34D399;
-  --color-evento-text: #F1F6FA;
-  --color-evento-muted: #8BA4B8;
-  --color-evento-border: rgba(0, 119, 182, 0.1);
+  --color-primary: var(--th-primary, #6366F1);
+  --color-secondary: var(--th-secondary, #EC4899);
+  --color-primary-hover: var(--th-primary-hover, #4F46E5);
+  --color-secondary-hover: var(--th-secondary-hover, #DB2777);
+  --color-base: var(--th-base, #F8F9FA);
+  --color-surface: var(--th-surface, #FFFFFF);
+  --color-elevated: var(--th-elevated, #F3F4F6);
+  --color-text: var(--th-text, #1F2937);
+  --color-muted: var(--th-muted, #6B7280);
+  --color-success: #10B981;
+  --color-error: #EF4444;
 }
 
 @keyframes heartBeat {
@@ -29,11 +31,11 @@
 .animate-streak-pulse { animation: streakPulse 2s ease-in-out infinite; }
 
 body {
-  background-color: #071521;
-  color: #F1F6FA;
+  background-color: var(--th-base, #F8F9FA);
+  color: var(--th-text, #1F2937);
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0D2137; }
-::-webkit-scrollbar-thumb { background: #162D47; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #0077B6; }
+::-webkit-scrollbar-track { background: var(--th-elevated, #F3F4F6); }
+::-webkit-scrollbar-thumb { background: var(--th-muted, #6B7280); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--th-primary, #6366F1); }

@@ -135,7 +135,7 @@ export function QrValidator() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Validar código QR</h2>
+        <h2 className="text-lg font-semibold text-text">Validar código QR</h2>
         {!scanning ? (
           <Button onClick={startScanning} size="sm">
             📷 Escanear QR
@@ -148,17 +148,17 @@ export function QrValidator() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FFD100]">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400">
           {error}
         </div>
       )}
 
-      <div id={CAMERA_ID} className={`w-full rounded-xl overflow-hidden border ${scanning ? 'border-[#0077B6]/30' : 'border-white/10'} ${!scanning && !result.status ? 'bg-[#0D2137]' : ''}`}>
+      <div id={CAMERA_ID} className={`w-full rounded-xl overflow-hidden border ${scanning ? 'border-primary/30' : 'border-primary/10'} ${!scanning && !result.status ? 'bg-surface' : ''}`}>
         {!scanning && !result.status && !error && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <span className="text-5xl mb-4">📸</span>
-            <p className="text-[#8BA4B8] text-sm">Pulsa "Escanear QR" y enfoca el código</p>
-            <p className="text-[#8BA4B8] text-xs mt-1">de la entrada del usuario</p>
+            <p className="text-muted text-sm">Pulsa "Escanear QR" y enfoca el código</p>
+            <p className="text-muted text-xs mt-1">de la entrada del usuario</p>
           </div>
         )}
       </div>

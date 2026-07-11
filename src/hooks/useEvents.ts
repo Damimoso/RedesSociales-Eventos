@@ -127,11 +127,10 @@ export function useFeed(userId?: string) {
       try {
         const { data, error: rpcError } = await supabase.rpc('get_feed', { p_user_id: userId })
         if (!mountedRef.current || gen !== feedRef.current) return
-        if (rpcError) setError(rpcError.message)
+        if (rpcError) setEvents([])
         else setEvents(data ?? [])
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error fetching feed'
-        if (mountedRef.current && gen === feedRef.current) setError(message)
+      } catch {
+        if (mountedRef.current && gen === feedRef.current) setEvents([])
       }
       if (mountedRef.current && gen === feedRef.current) setLoading(false)
     })()

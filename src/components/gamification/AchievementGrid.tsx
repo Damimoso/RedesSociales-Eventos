@@ -39,12 +39,12 @@ export function AchievementGrid() {
           <div key={a.key}
             className={`relative flex flex-col items-center gap-1 rounded-xl p-3 text-center transition-all ${
               has
-                ? 'bg-gradient-to-b from-[#0077B6]/20 to-transparent border border-[#0077B6]/30'
-                : 'bg-white/5 border border-white/10 opacity-40 grayscale'
+                ? 'bg-gradient-to-b from-primary/20 to-transparent border border-primary/30'
+                : 'bg-primary/5 border border-primary/10 opacity-40 grayscale'
             }`}
           >
             <span className="text-2xl">{a.icon}</span>
-            <span className="text-[11px] font-medium leading-tight text-white">{a.title}</span>
+            <span className="text-[11px] font-medium leading-tight text-text">{a.title}</span>
             {has && (
               <span className="absolute -top-1 -right-1 text-xs">✅</span>
             )}

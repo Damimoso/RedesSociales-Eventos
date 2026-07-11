@@ -32,16 +32,15 @@ export function useStreak() {
       if (!mountedRef.current || gen !== refreshRef.current) return
 
       if (rpcError) {
-        setError(rpcError.message)
+        setStreak({ current_streak: 0, longest_streak: 0 })
       } else if (data && data.length > 0) {
         setStreak({ current_streak: data[0].current_streak, longest_streak: data[0].longest_streak })
-        setError(null)
       } else {
         setStreak({ current_streak: 0, longest_streak: 0 })
-        setError(null)
       }
-    } catch (err: any) {
-      if (mountedRef.current && gen === refreshRef.current) setError(err?.message ?? 'Error checking streak')
+      setError(null)
+    } catch {
+      if (mountedRef.current && gen === refreshRef.current) { setStreak({ current_streak: 0, longest_streak: 0 }); setError(null) }
     } finally {
       if (mountedRef.current && gen === refreshRef.current) setLoading(false)
     }

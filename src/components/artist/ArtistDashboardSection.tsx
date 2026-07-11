@@ -71,7 +71,7 @@ export function ArtistDashboardSection({ userId }: Props) {
 
   if (error) return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-[#0D2137] border border-red-500/30 rounded-lg p-6 text-center">
+      <div className="bg-surface border border-red-500/30 rounded-lg p-6 text-center">
         <p className="text-red-400 text-sm mb-3">{error}</p>
         <Button size="sm" onClick={() => { setLoading(true); load() }}>Reintentar</Button>
       </div>
@@ -85,27 +85,27 @@ export function ArtistDashboardSection({ userId }: Props) {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Panel del Artista</h1>
+        <h1 className="text-2xl font-bold text-text">Panel del Artista</h1>
         <Link to="/profile"><Button variant="outline" size="sm">Mi perfil</Button></Link>
       </div>
 
       {/* Invitaciones pendientes */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4">
-          Invitaciones {pending.length > 0 && <span className="text-[#FFD100] text-sm">({pending.length} pendientes)</span>}
+        <h2 className="text-lg font-semibold text-text mb-4">
+          Invitaciones {pending.length > 0 && <span className="text-secondary text-sm">({pending.length} pendientes)</span>}
         </h2>
         {pending.length === 0 ? (
-          <p className="text-[#8BA4B8] text-sm">No tienes invitaciones pendientes</p>
+          <p className="text-muted text-sm">No tienes invitaciones pendientes</p>
         ) : (
           <div className="space-y-2">
             {pending.map(inv => (
-              <div key={inv.id} className="bg-[#0D2137] border border-[#FFD100]/30 rounded-lg p-4">
+              <div key={inv.id} className="bg-surface border border-secondary/30 rounded-lg p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-medium text-sm text-white">{inv.event_title}</h3>
-                    <p className="text-xs text-[#8BA4B8]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
-                    <p className="text-xs text-[#8BA4B8]">Organiza: {inv.organizer_name}</p>
-                    {inv.stage_time && <p className="text-xs text-[#0077B6]">Actuación: {new Date(inv.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
+                    <h3 className="font-medium text-sm text-text">{inv.event_title}</h3>
+                    <p className="text-xs text-muted">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
+                    <p className="text-xs text-muted">Organiza: {inv.organizer_name}</p>
+                    {inv.stage_time && <p className="text-xs text-primary">Actuación: {new Date(inv.stage_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>}
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button size="sm" onClick={() => respond(inv.id, true)}>Aceptar</Button>
@@ -120,20 +120,20 @@ export function ArtistDashboardSection({ userId }: Props) {
 
       {/* Próximos eventos confirmados */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold text-white mb-4">Tus próximos eventos</h2>
+        <h2 className="text-lg font-semibold text-text mb-4">Tus próximos eventos</h2>
         {accepted.length === 0 ? (
-          <p className="text-[#8BA4B8] text-sm">No tienes eventos confirmados</p>
+          <p className="text-muted text-sm">No tienes eventos confirmados</p>
         ) : (
           <div className="space-y-2">
             {accepted.map(inv => (
               <Link key={inv.id} to={`/events/${inv.event_id}`}
-                className="block bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4 hover:border-[rgba(0,119,182,0.3)] transition-colors">
+                className="block bg-surface border border-primary/10 rounded-lg p-4 hover:border-primary/30 transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-sm text-white truncate">{inv.event_title}</h3>
-                    <p className="text-xs text-[#8BA4B8]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
+                    <h3 className="font-medium text-sm text-text truncate">{inv.event_title}</h3>
+                    <p className="text-xs text-muted">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
                   </div>
-                  <span className="text-xs text-[#34D399]">✓ Confirmado</span>
+                  <span className="text-xs text-green-500">✓ Confirmado</span>
                 </div>
               </Link>
             ))}
@@ -144,16 +144,16 @@ export function ArtistDashboardSection({ userId }: Props) {
       {/* Rechazados */}
       {rejected.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-white mb-4">Rechazados</h2>
+          <h2 className="text-lg font-semibold text-text mb-4">Rechazados</h2>
           <div className="space-y-2 opacity-50">
             {rejected.map(inv => (
-              <div key={inv.id} className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4">
+              <div key={inv.id} className="bg-surface border border-primary/10 rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-sm text-white truncate">{inv.event_title}</h3>
-                    <p className="text-xs text-[#8BA4B8]">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
+                    <h3 className="font-medium text-sm text-text truncate">{inv.event_title}</h3>
+                    <p className="text-xs text-muted">{new Date(inv.start_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · {inv.event_city}</p>
                   </div>
-                  <span className="text-xs text-[#FFD100]">Rechazado</span>
+                  <span className="text-xs text-secondary">Rechazado</span>
                 </div>
               </div>
             ))}

@@ -205,7 +205,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
             <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">
               ${props.organizer_name}
             </div>
-            <div style="font-size: 11px; font-weight: 600; color: ${props.is_free ? '#10B981' : '#0077B6'}; margin-top: 4px;">
+            <div style="font-size: 11px; font-weight: 600; color: ${props.is_free ? '#10B981' : 'var(--th-primary, #6366F1)'}; margin-top: 4px;">
               ${props.is_free ? 'Gratuito' : 'Desde ' + (props.price / 100).toFixed(2) + ' €'}
             </div>
           </div>

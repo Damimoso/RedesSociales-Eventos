@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ThemeProvider>
         <ErrorBoundary>
         <Routes>
           <Route element={<Layout />}>
@@ -54,14 +56,15 @@ export default function App() {
             } />
             <Route path="*" element={
               <div className="text-center py-16">
-                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
-                <p className="text-[#8BA4B8] mb-6">Página no encontrada</p>
-                <a href="/" className="text-[#0077B6] hover:underline">Volver al inicio</a>
+                <h1 className="text-4xl font-bold text-text mb-4">404</h1>
+                <p className="text-muted mb-6">Página no encontrada</p>
+                <a href="/" className="text-primary hover:underline">Volver al inicio</a>
               </div>
             } />
           </Route>
         </Routes>
         </ErrorBoundary>
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   )

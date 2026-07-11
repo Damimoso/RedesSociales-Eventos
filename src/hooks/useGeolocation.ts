@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 type GeoPosition = {
   lat: number
@@ -20,6 +20,8 @@ export function useGeolocation() {
     loading: true,
   })
 
+  const fallbackTimer = useRef<number | null>(null)
+
   useEffect(() => {
     let cancelled = false
     if (!navigator.geolocation) {
@@ -27,9 +29,15 @@ export function useGeolocation() {
       return
     }
 
+    fallbackTimer.current = window.setTimeout(() => {
+      if (cancelled) return
+      setState({ position: DEFAULT_LOCATION, error: null, loading: false })
+    }, 5000)
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         if (cancelled) return
+        if (fallbackTimer.current !== null) clearTimeout(fallbackTimer.current)
         setState({
           position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
           error: null,
@@ -38,11 +46,12 @@ export function useGeolocation() {
       },
       () => {
         if (cancelled) return
+        if (fallbackTimer.current !== null) clearTimeout(fallbackTimer.current)
         setState({ position: DEFAULT_LOCATION, error: null, loading: false })
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
     )
-    return () => { cancelled = true }
+    return () => { cancelled = true; if (fallbackTimer.current !== null) clearTimeout(fallbackTimer.current) }
   }, [])
 
   return state

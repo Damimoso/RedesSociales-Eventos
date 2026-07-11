@@ -187,7 +187,7 @@ export default function Dashboard() {
   }, [orgId, activeTab])
 
   if (loading) return <LoadingSpinner />
-  if (!user) return <p className="text-center text-[#8BA4B8] py-16">Inicia sesión para acceder al dashboard</p>
+  if (!user) return <p className="text-center text-muted py-16">Inicia sesión para acceder al dashboard</p>
 
   if (role === 'artist') {
     return <ArtistDashboardSection userId={user.id} />
@@ -196,8 +196,8 @@ export default function Dashboard() {
   if (role !== 'organizer') {
     return (
       <div className="max-w-lg mx-auto text-center py-16">
-        <h1 className="text-2xl font-bold text-white mb-4">Dashboard</h1>
-        <p className="text-[#8BA4B8] mb-6">¿Quieres crear eventos? Solicita ser organizador.</p>
+        <h1 className="text-2xl font-bold text-text mb-4">Dashboard</h1>
+        <p className="text-muted mb-6">¿Quieres crear eventos? Solicita ser organizador.</p>
         {role === 'user' && <Button onClick={async () => {
           try {
             const { error: roleErr } = await supabase.from('user_roles').insert({ user_id: user.id, role: 'organizer' })
@@ -219,7 +219,7 @@ export default function Dashboard() {
     <div className="flex border-b border-[rgba(0,119,182,0.1)] mb-6 overflow-x-auto">
       {tabs.map(t => (
         <button key={t.key} onClick={() => setActiveTab(t.key)}
-          className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.key ? 'border-[#0077B6] text-[#0077B6]' : 'border-transparent text-[#8BA4B8] hover:text-white'}`}
+          className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.key ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-text'}`}
         >{t.label}</button>
       ))}
     </div>
@@ -228,27 +228,27 @@ export default function Dashboard() {
   const renderEventos = () => (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Mis eventos</h2>
+        <h2 className="text-lg font-semibold text-text">Mis eventos</h2>
         <Link to="/events/new"><Button>+ Nuevo evento</Button></Link>
       </div>
-      {events.length === 0 ? <p className="text-[#8BA4B8] text-sm">Aún no has creado ningún evento</p> : (
+      {events.length === 0 ? <p className="text-muted text-sm">Aún no has creado ningún evento</p> : (
         <div className="space-y-2">
           {events.map(e => {
             const pct = e.max_capacity > 0 ? Math.round((e.max_capacity - e.remaining_capacity) / e.max_capacity * 100) : 0
             return (
-            <div key={e.id} className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4">
+            <div key={e.id} className="bg-surface border border-primary/10 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="font-medium text-sm text-white">{e.title}</h3>
-                  <p className="text-xs text-[#8BA4B8]">{new Date(e.start_date).toLocaleDateString('es-ES')} · {e.remaining_capacity}/{e.max_capacity} entradas</p>
+                  <h3 className="font-medium text-sm text-text">{e.title}</h3>
+                  <p className="text-xs text-muted">{new Date(e.start_date).toLocaleDateString('es-ES')} · {e.remaining_capacity}/{e.max_capacity} entradas</p>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${e.status === 'published' ? 'bg-[#34D399]/20 text-[#34D399]' : e.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/10 text-[#8BA4B8]'}`}>{e.status}</span>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${e.status === 'published' ? 'bg-[#34D399]/20 text-[#34D399]' : e.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-primary/10 text-muted'}`}>{e.status}</span>
               </div>
-              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-primary/5 rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${pct}%`, background: pct >= 90 ? '#FFD100' : pct >= 50 ? '#0077B6' : '#34D399' }} />
               </div>
-              <p className="text-[10px] text-[#8BA4B8] mt-1">{pct}% vendido</p>
+              <p className="text-[10px] text-muted mt-1">{pct}% vendido</p>
             </div>
             )
           })}
@@ -259,45 +259,45 @@ export default function Dashboard() {
 
   const renderEntradas = () => (
     <>
-      <h2 className="text-lg font-semibold text-white mb-4">Crear tipo de entrada</h2>
-      {tierError && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-[#FFD100] mb-4">{tierError}</div>}
-      <form onSubmit={handleCreateTier} className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-xl p-6 mb-6 space-y-4">
+      <h2 className="text-lg font-semibold text-text mb-4">Crear tipo de entrada</h2>
+      {tierError && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-sm text-red-400 mb-4">{tierError}</div>}
+      <form onSubmit={handleCreateTier} className="bg-surface border border-primary/10 rounded-xl p-6 mb-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Evento</label>
-            <select required value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6]">
+            <label className="block text-sm font-medium text-muted mb-1">Evento</label>
+            <select required value={selectedEventId} onChange={e => setSelectedEventId(e.target.value)} className="w-full bg-base border border-primary/10 rounded-lg px-4 py-2.5 text-text text-sm focus:outline-none focus:border-primary">
               <option value="">Seleccionar evento...</option>
               {myEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
             </select>
-            {myEvents.length === 0 && <p className="text-xs text-[#8BA4B8] mt-1">No tienes eventos publicados.</p>}
+            {myEvents.length === 0 && <p className="text-xs text-muted mt-1">No tienes eventos publicados.</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Nombre de la entrada</label>
-            <input type="text" required placeholder="Ej: General, VIP, Early Bird" value={tierName} onChange={e => setTierName(e.target.value)} className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
+            <label className="block text-sm font-medium text-muted mb-1">Nombre de la entrada</label>
+            <input type="text" required placeholder="Ej: General, VIP, Early Bird" value={tierName} onChange={e => setTierName(e.target.value)} className="w-full bg-base border border-primary/10 rounded-lg px-4 py-2.5 text-text text-sm focus:outline-none focus:border-primary" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Precio (€)</label>
-            <input type="number" required min={0} step={0.01} placeholder="0.00" value={tierPriceEur} onChange={e => setTierPriceEur(e.target.value)} className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
-            <p className="text-xs text-[#8BA4B8] mt-1">Se guardará como {Math.round(parseFloat(tierPriceEur || '0') * 100)} céntimos</p>
+            <label className="block text-sm font-medium text-muted mb-1">Precio (€)</label>
+            <input type="number" required min={0} step={0.01} placeholder="0.00" value={tierPriceEur} onChange={e => setTierPriceEur(e.target.value)} className="w-full bg-base border border-primary/10 rounded-lg px-4 py-2.5 text-text text-sm focus:outline-none focus:border-primary" />
+            <p className="text-xs text-muted mt-1">Se guardará como {Math.round(parseFloat(tierPriceEur || '0') * 100)} céntimos</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#8BA4B8] mb-1">Cantidad disponible</label>
-            <input type="number" required min={1} placeholder="100" value={tierQty} onChange={e => setTierQty(e.target.value)} className="w-full bg-[#071521] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#0077B6]" />
+            <label className="block text-sm font-medium text-muted mb-1">Cantidad disponible</label>
+            <input type="number" required min={1} placeholder="100" value={tierQty} onChange={e => setTierQty(e.target.value)} className="w-full bg-base border border-primary/10 rounded-lg px-4 py-2.5 text-text text-sm focus:outline-none focus:border-primary" />
           </div>
         </div>
         <Button type="submit" loading={creatingTier} disabled={!selectedEventId || !tierName || !tierPriceEur || !tierQty}>Crear entrada</Button>
       </form>
 
-      <h3 className="text-md font-semibold text-white mb-3">Entradas creadas</h3>
-      {ticketTiers.length === 0 ? <p className="text-[#8BA4B8] text-sm">Aún no has creado tipos de entrada</p> : (
+      <h3 className="text-md font-semibold text-text mb-3">Entradas creadas</h3>
+      {ticketTiers.length === 0 ? <p className="text-muted text-sm">Aún no has creado tipos de entrada</p> : (
         <div className="space-y-2">
           {ticketTiers.map(t => (
-            <div key={t.id} className="bg-[#0D2137] border border-[rgba(0,119,182,0.1)] rounded-lg p-4 flex items-center justify-between">
+            <div key={t.id} className="bg-surface border border-primary/10 rounded-lg p-4 flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-sm text-white">{t.name}</h4>
-                <p className="text-xs text-[#8BA4B8]">{centsToEur(t.price_cents)} € · {t.remaining}/{t.quantity} disponibles</p>
+                <h4 className="font-medium text-sm text-text">{t.name}</h4>
+                <p className="text-xs text-muted">{centsToEur(t.price_cents)} € · {t.remaining}/{t.quantity} disponibles</p>
               </div>
-              <span className="text-xs text-[#8BA4B8]">{new Date(t.created_at).toLocaleDateString('es-ES')}</span>
+              <span className="text-xs text-muted">{new Date(t.created_at).toLocaleDateString('es-ES')}</span>
             </div>
           ))}
         </div>
@@ -416,7 +416,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white mb-2">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-text mb-2">Dashboard</h1>
       {renderTabNav()}
       {activeTab === 'eventos' && renderEventos()}
       {activeTab === 'entradas' && renderEntradas()}
