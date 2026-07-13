@@ -109,7 +109,7 @@ export type FollowedEvent = {
   tags: string[] | null
 }
 
-export function useFeed() {
+export function useFeed(userId?: string) {
   const [events, setEvents] = useState<FollowedEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -120,6 +120,7 @@ export function useFeed() {
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   useEffect(() => {
+    if (!userId) { setLoading(false); return }
     setLoading(true); setError(null)
     const gen = ++feedRef.current; (async () => {
       try {
@@ -132,7 +133,7 @@ export function useFeed() {
       }
       if (mountedRef.current && gen === feedRef.current) setLoading(false)
     })()
-  }, [])
+  }, [userId])
 
   return { events, loading, error }
 }
