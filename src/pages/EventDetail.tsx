@@ -40,6 +40,11 @@ type EventDetail = {
   lng: number
 }
 
+type FriendProfile = {
+  id: string
+  display_name: string | null
+}
+
 type TicketTier = {
   id: string
   name: string
@@ -59,6 +64,10 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [buyError, setBuyError] = useState('')
+  const [showInvite, setShowInvite] = useState(false)
+  const [friends, setFriends] = useState<FriendProfile[]>([])
+  const [inviting, setInviting] = useState(false)
+  const [inviteSent, setInviteSent] = useState<string | null>(null)
   const miniMapRef = useRef<maplibregl.Map | null>(null)
   const miniMapContainer = useRef<HTMLDivElement | null>(null)
 
@@ -113,6 +122,36 @@ export default function EventDetail() {
     })()
     return () => { cancelled = true }
   }, [id])
+
+  useEffect(() => {
+    if (!user || !showInvite) return
+    let cancelled = false; (async () => {
+      const { data: fData } = await supabase
+        .from('friendships')
+        .select('requester_id, addressee_id')
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+        .eq('status', 'accepted')
+      if (cancelled || !fData) return
+      const friendIds = fData.map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id)
+      if (friendIds.length === 0) return
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', friendIds)
+      if (!cancelled) setFriends(profiles ?? [])
+    })()
+    return () => { cancelled = true }
+  }, [user, showInvite])
+
+  const sendInvite = async (receiverId: string) => {
+    if (!user || !event) return
+    setInviting(true)
+    await supabase.from('event_invites').insert({
+      event_id: event.id, sender_id: user.id, receiver_id: receiverId,
+    }).maybeSingle()
+    setInviteSent(receiverId)
+    setInviting(false)
+  }
 
   useEffect(() => {
     if (!event || event.lat === 0 || !miniMapContainer.current) return
@@ -184,9 +223,14 @@ export default function EventDetail() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1">
             <p className="text-muted text-sm">Organizado por {event.organizer_name}</p>
             <FollowButton followingId={event.organizer_id} followingType="organizer" />
+            {user && (
+              <Button variant="outline" size="sm" onClick={() => setShowInvite(true)}>
+                Invitar amigos
+              </Button>
+            )}
           </div>
         </div>
 
@@ -306,6 +350,37 @@ export default function EventDetail() {
           <span>Aforo: {event.remaining_capacity}/{event.max_capacity}</span>
         </div>
       </div>
+
+      {showInvite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowInvite(false)}>
+          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-primary/10" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-text mb-4">Invitar amigos a {event.title}</h3>
+            {friends.length === 0 ? (
+              <p className="text-sm text-muted text-center py-4">No tienes amigos agregados</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {friends.map(f => (
+                  <div key={f.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-elevated transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{ background: 'linear-gradient(135deg, var(--th-primary), var(--th-secondary))', color: '#fff' }}>
+                        {f.display_name?.[0]?.toUpperCase() ?? '?'}
+                      </div>
+                      <span className="text-sm text-text">{f.display_name ?? 'Usuario'}</span>
+                    </div>
+                    {inviteSent === f.id ? (
+                      <span className="text-xs text-green-500 font-medium">¡Invitado!</span>
+                    ) : (
+                      <Button size="sm" onClick={() => sendInvite(f.id)} loading={inviting}>Invitar</Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button variant="secondary" className="w-full mt-4" onClick={() => setShowInvite(false)}>Cerrar</Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

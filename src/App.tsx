@@ -16,6 +16,8 @@ import Dashboard from '@/pages/Dashboard'
 import CreateEventWizard from '@/pages/CreateEventWizard'
 import Admin from '@/pages/Admin'
 import ArtistProfile from '@/pages/ArtistProfile'
+import Friends from '@/pages/Friends'
+import Messages from '@/pages/Messages'
 
 function suppressMaplibreWorkerError(e: Event) {
   const msg = e instanceof ErrorEvent ? e.message : e instanceof PromiseRejectionEvent ? e.reason?.message : ''
@@ -53,6 +55,12 @@ export default function App() {
             } />
             <Route path="/tickets" element={
               <ProtectedRoute><MyTickets /></ProtectedRoute>
+            } />
+            <Route path="/friends" element={
+              <ProtectedRoute><Friends /></ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute><Messages /></ProtectedRoute>
             } />
 
             {/* Requieren rol organizer o admin */}

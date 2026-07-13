@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/Button'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import logoLight from '@/img/Logo_fondo_blanco.png'
 import logoDark from '@/img/Logo_fondo_negro.png'
 import type { ThemeId } from '@/lib/themes'
@@ -32,6 +34,26 @@ export function Header() {
   const isOrganizer = roles?.includes('organizer') || roles?.includes('admin')
   const isAdmin = roles?.includes('admin')
   const logo = isDarkHex(vars.base) ? logoDark : logoLight
+  const [unreadMsg, setUnreadMsg] = useState(0)
+  const [pendingFriends, setPendingFriends] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+    const load = async () => {
+      const [{ count: msgCount }, { count: friendCount }] = await Promise.all([
+        supabase.from('messages').select('*', { count: 'exact', head: true }).eq('receiver_id', user.id).is('read_at', null),
+        supabase.from('friendships').select('*', { count: 'exact', head: true }).eq('addressee_id', user.id).eq('status', 'pending'),
+      ])
+      setUnreadMsg(msgCount ?? 0)
+      setPendingFriends(friendCount ?? 0)
+    }
+    load()
+    const channel = supabase.channel('header-notifs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, () => { load() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `addressee_id=eq.${user.id}` }, () => { load() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user])
 
   return (
     <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-primary/10">
@@ -45,6 +67,22 @@ export function Header() {
             <>
               <NavLink to="/events">Explorar</NavLink>
               <NavLink to="/tickets">Mis Entradas</NavLink>
+              <div className="relative">
+                <NavLink to="/messages">Mensajes</NavLink>
+                {unreadMsg > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-secondary text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    {unreadMsg > 9 ? '9+' : unreadMsg}
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <NavLink to="/friends">Amigos</NavLink>
+                {pendingFriends > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-secondary text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    {pendingFriends > 9 ? '9+' : pendingFriends}
+                  </span>
+                )}
+              </div>
               {isOrganizer && <NavLink to="/dashboard">Dashboard</NavLink>}
               {isOrganizer && <NavLink to="/events/new">Crear Evento</NavLink>}
               {isAdmin && <NavLink to="/admin">Admin</NavLink>}

@@ -68,7 +68,7 @@ Despliegue manual desde CLI:
 
 ```bash
 # Configurar acceso
-export SUPABASE_ACCESS_TOKEN=sbp_xxx
+export SUPABASE_ACCESS_TOKEN=sbp_v0_bad68345cc4a6481cf7f8f01b4ced61909d7cc36
 
 # Desplegar funciones
 npx supabase functions deploy create-checkout \

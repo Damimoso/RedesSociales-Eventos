@@ -17,18 +17,22 @@ export default function Profile() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [roles, setRoles] = useState<string[]>([])
+  const [friendCount, setFriendCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
     let cancelled = false; (async () => {
       try {
-        const [profileRes, rolesRes] = await Promise.all([
+        const [profileRes, rolesRes, friendRes] = await Promise.all([
           supabase.from('profiles').select('display_name, avatar_url, phone').eq('id', user.id).maybeSingle(),
           supabase.from('user_roles').select('role').eq('user_id', user.id),
+          supabase.from('friendships').select('id', { count: 'exact', head: true })
+            .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`).eq('status', 'accepted'),
         ])
         if (cancelled) return
         if (profileRes.data) setProfile(profileRes.data)
         if (rolesRes.data) setRoles(rolesRes.data.map(r => r.role))
+        if (friendRes.count !== null) setFriendCount(friendRes.count)
       } catch (err) { console.error('Error loading profile:', err) }
       if (!cancelled) setLoading(false)
     })()
@@ -70,20 +74,30 @@ export default function Profile() {
         </div>
       </section>
 
-      <section>
-        <Link
-          to="/tickets"
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/tickets"
           className="flex items-center justify-between bg-gradient-to-r from-primary/20 to-transparent rounded-xl p-4 hover:from-primary/30 transition-all border border-primary/15"
         >
           <div>
             <h2 className="font-semibold text-text">Mis Entradas</h2>
-            <p className="text-sm text-muted">Ver códigos QR de tus compras</p>
+            <p className="text-sm text-muted">Ver QR</p>
           </div>
-          <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
-      </section>
+        <Link to="/friends"
+          className="flex items-center justify-between bg-gradient-to-r from-secondary/20 to-transparent rounded-xl p-4 hover:from-secondary/30 transition-all border border-secondary/15"
+        >
+          <div>
+            <h2 className="font-semibold text-text">Amigos</h2>
+            <p className="text-sm text-muted">{friendCount} amigo{friendCount !== 1 ? 's' : ''}</p>
+          </div>
+          <svg className="w-5 h-5 text-secondary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      </div>
 
       <section className="space-y-3">
         <h2 className="font-semibold text-text/80 text-sm uppercase tracking-wider">Logros</h2>

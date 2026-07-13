@@ -37,7 +37,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Token** | `sbp_xxx` (regenerar en https://supabase.com/dashboard/account/tokens) |
+| **Token** | `sbp_v0_bad68345cc4a6481cf7f8f01b4ced61909d7cc36` 
 | **Uso** | `npx supabase functions deploy` y `npx supabase secrets set` |
 
 ---
