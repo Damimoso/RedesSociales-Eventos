@@ -51,6 +51,13 @@ export function EventMap({ events, center, onEventClick }: Props) {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
+    const suppressWorkerError = (e: ErrorEvent) => {
+      if (e.filename?.startsWith('blob:') && e.message?.includes('Expected value to be of type number, but found null')) {
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('error', suppressWorkerError, true)
+
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: MAP_TILE_STYLE,
@@ -69,7 +76,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
     map.on('error', (e) => console.warn('MapLibre error:', e.error?.message))
 
     mapRef.current = map
-    return () => { map.remove(); mapRef.current = null; setReady(false) }
+    return () => { window.removeEventListener('error', suppressWorkerError, true); map.remove(); mapRef.current = null; setReady(false) }
   }, [])
 
   useEffect(() => {
