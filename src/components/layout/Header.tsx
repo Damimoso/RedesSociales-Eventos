@@ -1,6 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/Button'
+import logoLight from '@/img/Logo_fondo_blanco.png'
+import logoDark from '@/img/Logo_fondo_negro.png'
 
 function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
@@ -10,18 +13,28 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   )
 }
 
+function isDarkHex(hex: string): boolean {
+  const c = hex.replace('#', '')
+  if (c.length < 6) return false
+  const r = parseInt(c.slice(0, 2), 16)
+  const g = parseInt(c.slice(2, 4), 16)
+  const b = parseInt(c.slice(4, 6), 16)
+  return (r * 0.299 + g * 0.587 + b * 0.114) < 128
+}
+
 export function Header() {
   const { user, roles, signOut } = useAuth()
+  const { vars } = useTheme()
   const navigate = useNavigate()
   const isOrganizer = roles?.includes('organizer') || roles?.includes('admin')
   const isAdmin = roles?.includes('admin')
+  const logo = isDarkHex(vars.base) ? logoDark : logoLight
 
   return (
     <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-primary/10">
       <div className="mx-auto max-w-7xl flex items-center justify-between px-4 h-14">
-        <Link to="/" className="flex items-center gap-2 font-bold text-lg text-primary">
-          <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
-          Eventos
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="Eventos" className="h-8 w-auto" />
         </Link>
 
         <nav className="flex items-center gap-3">
