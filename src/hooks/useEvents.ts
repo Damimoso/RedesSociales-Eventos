@@ -109,7 +109,7 @@ export type FollowedEvent = {
   tags: string[] | null
 }
 
-export function useFeed(userId?: string) {
+export function useFeed() {
   const [events, setEvents] = useState<FollowedEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -120,12 +120,10 @@ export function useFeed(userId?: string) {
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false } }, [])
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return }
-
     setLoading(true); setError(null)
     const gen = ++feedRef.current; (async () => {
       try {
-        const { data, error: rpcError } = await supabase.rpc('get_feed', { p_user_id: userId })
+        const { data, error: rpcError } = await supabase.rpc('get_feed')
         if (!mountedRef.current || gen !== feedRef.current) return
         if (rpcError) setEvents([])
         else setEvents(data ?? [])
@@ -134,7 +132,7 @@ export function useFeed(userId?: string) {
       }
       if (mountedRef.current && gen === feedRef.current) setLoading(false)
     })()
-  }, [userId])
+  }, [])
 
   return { events, loading, error }
 }
