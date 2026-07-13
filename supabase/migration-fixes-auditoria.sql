@@ -20,7 +20,8 @@ CREATE POLICY "events_insert_own"
 -- El trigger trg_tickets_decrement_capacity ya decrementa remaining_capacity
 -- al INSERTAR en tickets. purchase_tickets lo hacía explícitamente ANTES del
 -- INSERT, causando DOBLE decremento.
-CREATE OR REPLACE FUNCTION public.purchase_tickets(
+DROP FUNCTION IF EXISTS public.purchase_tickets(UUID, UUID, INTEGER) CASCADE;
+CREATE FUNCTION public.purchase_tickets(
     p_event_id UUID,
     p_tier_id  UUID,
     p_quantity INTEGER
@@ -106,7 +107,8 @@ $$;
 
 -- 3. GET_FEED: actualizar para incluir también follows de tipo 'user' y
 --    actividad social reciente (amigos comprando tickets, confirmando asistencia)
-CREATE OR REPLACE FUNCTION public.get_feed()
+DROP FUNCTION IF EXISTS public.get_feed() CASCADE;
+CREATE FUNCTION public.get_feed()
 RETURNS TABLE(
     id                UUID,
     title             TEXT,
