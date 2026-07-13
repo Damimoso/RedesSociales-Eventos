@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
@@ -16,7 +17,22 @@ import CreateEventWizard from '@/pages/CreateEventWizard'
 import Admin from '@/pages/Admin'
 import ArtistProfile from '@/pages/ArtistProfile'
 
+function suppressMaplibreWorkerError(e: Event) {
+  const msg = e instanceof ErrorEvent ? e.message : e instanceof PromiseRejectionEvent ? e.reason?.message : ''
+  if (msg?.includes('Expected value to be of type number, but found null')) {
+    e.preventDefault()
+  }
+}
+
 export default function App() {
+  useEffect(() => {
+    window.addEventListener('error', suppressMaplibreWorkerError, true)
+    window.addEventListener('unhandledrejection', suppressMaplibreWorkerError, true)
+    return () => {
+      window.removeEventListener('error', suppressMaplibreWorkerError, true)
+      window.removeEventListener('unhandledrejection', suppressMaplibreWorkerError, true)
+    }
+  }, [])
   return (
     <BrowserRouter>
       <AuthProvider>
