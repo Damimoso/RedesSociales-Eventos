@@ -29,33 +29,33 @@ export default function Login() {
       <h1 className="text-2xl font-bold text-center mb-6">Iniciar sesión</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className="block text-sm font-medium text-text mb-1">Email</label>
           <input
             type="email" required value={email} onChange={e => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-primary/20 bg-base px-4 py-2.5 text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="tu@email.com"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+          <label className="block text-sm font-medium text-text mb-1">Contraseña</label>
           <input
             type="password" required value={password} onChange={e => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-primary/20 bg-base px-4 py-2.5 text-text text-sm placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="••••••••"
           />
         </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p className="text-error text-sm">{error}</p>}
         <Button type="submit" loading={loading} className="w-full">Entrar</Button>
       </form>
       <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-        <div className="relative flex justify-center text-xs"><span className="bg-gray-50 px-2 text-gray-400">o</span></div>
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-primary/10" /></div>
+        <div className="relative flex justify-center text-xs"><span className="bg-base px-2 text-muted">o</span></div>
       </div>
       <Button variant="outline" className="w-full" onClick={signInWithGoogle}>
         Continuar con Google
       </Button>
-      <p className="text-center text-sm text-gray-500 mt-6">
-        ¿No tienes cuenta? <Link to="/register" className="text-indigo-600 font-medium">Regístrate</Link>
+      <p className="text-center text-sm text-muted mt-6">
+        ¿No tienes cuenta? <Link to="/register" className="text-primary font-medium">Regístrate</Link>
       </p>
     </div>
   )

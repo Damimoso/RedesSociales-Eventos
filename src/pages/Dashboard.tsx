@@ -216,9 +216,9 @@ export default function Dashboard() {
   }
 
   const renderTabNav = () => (
-    <div className="flex border-b border-[rgba(0,119,182,0.1)] mb-6 overflow-x-auto">
+    <div className="flex border-b border-primary/10 mb-6 overflow-x-auto" role="tablist">
       {tabs.map(t => (
-        <button key={t.key} onClick={() => setActiveTab(t.key)}
+        <button key={t.key} role="tab" aria-selected={activeTab === t.key} onClick={() => setActiveTab(t.key)}
           className={`whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === t.key ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-text'}`}
         >{t.label}</button>
       ))}
@@ -309,19 +309,19 @@ export default function Dashboard() {
 
   const renderPagos = () => (
     <>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Configuración de pagos</h2>
-      <p className="text-sm text-gray-500 mb-6">
+      <h2 className="text-lg font-semibold text-text mb-4">Configuración de pagos</h2>
+      <p className="text-sm text-muted mb-6">
         Conecta con Stripe para recibir los pagos de tus entradas de forma automática.
         Stripe aplica su propia comisión de procesamiento; el resto se transfiere a tu cuenta.
       </p>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+      <div className="bg-surface border border-primary/10 rounded-xl p-6 mb-6">
         {organizer?.stripe_account_id && organizer?.stripe_onboarding_complete ? (
-          <div className="flex items-center gap-3 text-green-700">
+          <div className="flex items-center gap-3 text-success">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <div>
               <p className="font-medium">Stripe Connect conectado</p>
-              <p className="text-xs text-gray-500">ID: {organizer.stripe_account_id}</p>
+              <p className="text-xs text-muted">ID: {organizer.stripe_account_id}</p>
             </div>
           </div>
         ) : organizer?.stripe_account_id ? (
@@ -334,29 +334,29 @@ export default function Dashboard() {
           </div>
         ) : (
           <div>
-            {stripeError && <p className="text-red-500 text-sm mb-3">{stripeError}</p>}
+            {stripeError && <p className="text-error text-sm mb-3">{stripeError}</p>}
             <Button onClick={handleStripeConnect} loading={stripeLoading}>Conectar con Stripe</Button>
-            <p className="text-xs text-gray-400 mt-2">Serás redirigido a Stripe para completar el registro.</p>
+            <p className="text-xs text-muted mt-2">Serás redirigido a Stripe para completar el registro.</p>
           </div>
         )}
       </div>
 
       <details className="mt-6">
-        <summary className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">O introducir datos bancarios manualmente</summary>
-        {bankSaved && <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg p-4 mt-4 mb-4">Datos bancarios guardados.</div>}
-        <form onSubmit={handleSaveBank} className="bg-white border border-gray-200 rounded-xl p-6 mt-4 space-y-4 max-w-lg">
+        <summary className="text-sm text-muted cursor-pointer hover:text-text">O introducir datos bancarios manualmente</summary>
+        {bankSaved && <div className="bg-success/10 border border-success/20 text-success text-sm rounded-lg p-4 mt-4 mb-4">Datos bancarios guardados.</div>}
+        <form onSubmit={handleSaveBank} className="bg-surface border border-primary/10 rounded-xl p-6 mt-4 space-y-4 max-w-lg">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Titular de la cuenta</label>
-            <input type="text" required value={bankHolder} onChange={e => setBankHolder(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="Nombre / Razón social" />
+            <label className="block text-sm font-medium text-text mb-1">Titular de la cuenta</label>
+            <input type="text" required value={bankHolder} onChange={e => setBankHolder(e.target.value)} className="w-full rounded-lg border border-primary/20 bg-base px-4 py-2.5 text-text text-sm" placeholder="Nombre / Razón social" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">IBAN</label>
-            <input type="text" required value={bankIban} onChange={e => { setBankIban(e.target.value); setIbanError('') }} className={`w-full rounded-lg border px-3 py-2 text-sm ${ibanError ? 'border-red-400' : 'border-gray-300'}`} placeholder="ES00 0000 0000 0000 0000 0000" />
-            {ibanError && <p className="text-xs text-red-500 mt-1">{ibanError}</p>}
+            <label className="block text-sm font-medium text-text mb-1">IBAN</label>
+            <input type="text" required value={bankIban} onChange={e => { setBankIban(e.target.value); setIbanError('') }} className={`w-full rounded-lg border bg-base px-4 py-2.5 text-text text-sm ${ibanError ? 'border-error' : 'border-primary/20'}`} placeholder="ES00 0000 0000 0000 0000 0000" />
+            {ibanError && <p className="text-xs text-error mt-1">{ibanError}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">BIC / SWIFT</label>
-            <input type="text" required value={bankSwift} onChange={e => setBankSwift(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" placeholder="BICXXXYY" />
+            <label className="block text-sm font-medium text-text mb-1">BIC / SWIFT</label>
+            <input type="text" required value={bankSwift} onChange={e => setBankSwift(e.target.value)} className="w-full rounded-lg border border-primary/20 bg-base px-4 py-2.5 text-text text-sm" placeholder="BICXXXYY" />
           </div>
           <Button type="submit" loading={savingBank}>Guardar datos bancarios</Button>
         </form>
@@ -366,49 +366,49 @@ export default function Dashboard() {
 
   const renderVentas = () => (
     <>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Historial de ventas</h2>
-      {salesError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-4 mb-4">{salesError}</div>}
+      <h2 className="text-lg font-semibold text-text mb-4">Historial de ventas</h2>
+      {salesError && <div className="bg-error/10 border border-error/20 text-error text-sm rounded-xl p-4 mb-4">{salesError}</div>}
       {loadingSales ? <LoadingSpinner /> : sales.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-400 mb-2">Aún no tienes ventas</p>
-          <p className="text-xs text-gray-400">Las ventas aparecerán aquí cuando los usuarios compren entradas.</p>
+          <p className="text-muted mb-2">Aún no tienes ventas</p>
+          <p className="text-xs text-muted">Las ventas aparecerán aquí cuando los usuarios compren entradas.</p>
         </div>
       ) : (<>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-2 font-medium text-gray-500">Evento</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Entradas</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Bruto</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Comisión (7%)</th>
-                <th className="text-right py-3 px-2 font-medium text-gray-500">Neto</th>
+              <tr className="border-b border-primary/10">
+                <th className="text-left py-3 px-2 font-medium text-muted">Evento</th>
+                <th className="text-right py-3 px-2 font-medium text-muted">Entradas</th>
+                <th className="text-right py-3 px-2 font-medium text-muted">Bruto</th>
+                <th className="text-right py-3 px-2 font-medium text-muted">Comisión (7%)</th>
+                <th className="text-right py-3 px-2 font-medium text-muted">Neto</th>
               </tr>
             </thead>
             <tbody>
               {sales.map(s => (
-                <tr key={s.event_id} className="border-b border-gray-100">
+                <tr key={s.event_id} className="border-b border-primary/10">
                   <td className="py-3 px-2 font-medium">{s.event_title}</td>
                   <td className="py-3 px-2 text-right">{s.total_tickets}</td>
                   <td className="py-3 px-2 text-right">{centsToEur(s.gross_cents)} {s.currency}</td>
-                  <td className="py-3 px-2 text-right text-red-500">-{centsToEur(s.fee_cents)}</td>
-                  <td className="py-3 px-2 text-right font-semibold text-green-600">{centsToEur(s.net_cents)}</td>
+                  <td className="py-3 px-2 text-right text-error">-{centsToEur(s.fee_cents)}</td>
+                  <td className="py-3 px-2 text-right font-semibold text-success">{centsToEur(s.net_cents)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="font-semibold text-sm border-t-2 border-gray-300">
+              <tr className="font-semibold text-sm border-t-2 border-primary/20">
                 <td className="py-3 px-2">Total</td>
                 <td className="py-3 px-2 text-right">{sales.reduce((a, s) => a + s.total_tickets, 0)}</td>
                 <td className="py-3 px-2 text-right">{centsToEur(sales.reduce((a, s) => a + Number(s.gross_cents), 0))} EUR</td>
-                <td className="py-3 px-2 text-right text-red-500">-{centsToEur(sales.reduce((a, s) => a + Number(s.fee_cents), 0))}</td>
-                <td className="py-3 px-2 text-right font-semibold text-green-600">{centsToEur(sales.reduce((a, s) => a + Number(s.net_cents), 0))} EUR</td>
+                <td className="py-3 px-2 text-right text-error">-{centsToEur(sales.reduce((a, s) => a + Number(s.fee_cents), 0))}</td>
+                <td className="py-3 px-2 text-right font-semibold text-success">{centsToEur(sales.reduce((a, s) => a + Number(s.net_cents), 0))} EUR</td>
               </tr>
             </tfoot>
           </table>
         </div>
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-500">La comisión del 7% cubre el mantenimiento de la plataforma. Stripe aplica su propia comisión de procesamiento aparte.</p>
+        <div className="mt-6 p-4 bg-elevated rounded-lg">
+          <p className="text-xs text-muted">La comisión del 7% cubre el mantenimiento de la plataforma. Stripe aplica su propia comisión de procesamiento aparte.</p>
         </div>
       </>)}
     </>

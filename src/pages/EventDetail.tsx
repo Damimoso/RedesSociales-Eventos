@@ -148,7 +148,7 @@ export default function EventDetail() {
   }
 
   if (loading) return <LoadingSpinner size="lg" />
-  if (!event) return <p className="text-center text-gray-500 py-16">Evento no encontrado</p>
+  if (!event) return <p className="text-center text-muted py-16">Evento no encontrado</p>
 
   const startDate = new Date(event.start_date)
   const endDate = new Date(event.end_date)
@@ -162,11 +162,11 @@ export default function EventDetail() {
         </div>
       )}
 
-      <div className="aspect-[2/1] rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 overflow-hidden mb-6">
+      <div className="aspect-[2/1] rounded-xl bg-primary/10 overflow-hidden mb-6">
         {event.cover_image_url ? (
           <img src={event.cover_image_url} alt={event.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="flex items-center justify-center h-full text-indigo-300 text-6xl font-bold">
+          <div className="flex items-center justify-center h-full text-primary/40 text-6xl font-bold">
             {event.title[0]}
           </div>
         )}
@@ -176,30 +176,30 @@ export default function EventDetail() {
         <div>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
+              <h1 className="text-3xl font-bold text-text">{event.title}</h1>
               {event.category_name && (
-                <span className="inline-block mt-1 text-xs font-medium bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full">
+                <span className="inline-block mt-1 text-xs font-medium bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
                   {event.category_name}
                 </span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2 mt-1">
-            <p className="text-gray-500 text-sm">Organizado por {event.organizer_name}</p>
+            <p className="text-muted text-sm">Organizado por {event.organizer_name}</p>
             <FollowButton followingId={event.organizer_id} followingType="organizer" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-gray-400 text-xs">Fecha</p>
+          <div className="bg-elevated rounded-lg p-3">
+            <p className="text-muted text-xs">Fecha</p>
             <p className="font-medium">{startDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            <p className="text-gray-500">{startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}{endDate > startDate ? ` — ${endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : ''}</p>
+            <p className="text-muted">{startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}{endDate > startDate ? ` — ${endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : ''}</p>
           </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-gray-400 text-xs">Ubicación</p>
+          <div className="bg-elevated rounded-lg p-3">
+            <p className="text-muted text-xs">Ubicación</p>
             <p className="font-medium">{event.address}</p>
-            <p className="text-gray-500">{event.city}{event.province ? `, ${event.province}` : ''}</p>
+            <p className="text-muted">{event.city}{event.province ? `, ${event.province}` : ''}</p>
             {event.lat !== 0 && (
               <div className="mt-2 h-[120px] rounded-lg overflow-hidden" ref={miniMapContainer} />
             )}
@@ -208,23 +208,23 @@ export default function EventDetail() {
 
         {event.description && (
           <div>
-            <h2 className="font-semibold text-gray-900 mb-2">Descripción</h2>
-            <p className="text-gray-600 whitespace-pre-line text-sm">{event.description}</p>
+            <h2 className="font-semibold text-text mb-2">Descripción</h2>
+            <p className="text-muted whitespace-pre-line text-sm">{event.description}</p>
           </div>
         )}
 
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {event.tags.map(t => (
-              <span key={t} className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">#{t}</span>
+              <span key={t} className="bg-elevated text-muted text-xs px-2 py-0.5 rounded-full">#{t}</span>
             ))}
           </div>
         )}
 
         {/* Ticket tiers */}
         {tiers.length > 0 && user && !clientSecret && (
-          <div className="border-t border-gray-100 pt-6">
-            <h2 className="font-semibold text-gray-900 mb-3">Selecciona tus entradas</h2>
+          <div className="border-t border-primary/10 pt-6">
+            <h2 className="font-semibold text-text mb-3">Selecciona tus entradas</h2>
             <div className="space-y-2 mb-4">
               {tiers.map(tier => {
                 const soldOut = tier.remaining === 0
@@ -232,19 +232,19 @@ export default function EventDetail() {
                   <label key={tier.id}
                     className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
                       selectedTierId === tier.id
-                        ? 'border-indigo-400 bg-indigo-50'
-                        : soldOut ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' : 'border-gray-200 hover:border-indigo-200'
+                        ? 'border-primary bg-primary/10'
+                        : soldOut ? 'border-primary/10 bg-elevated opacity-60 cursor-not-allowed' : 'border-primary/10 hover:border-primary/30'
                     }`}
                   >
                     <input type="radio" name="tier" value={tier.id} checked={selectedTierId === tier.id}
                       onChange={() => { setSelectedTierId(tier.id); setQuantity(1) }}
-                      disabled={soldOut} className="accent-indigo-600" />
+                      disabled={soldOut} className="accent-primary" />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{tier.name}</p>
-                      <p className="text-xs text-gray-400">{tier.remaining}/{tier.quantity} disponibles</p>
+                      <p className="text-xs text-muted">{tier.remaining}/{tier.quantity} disponibles</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-indigo-600">{centsToEur(tier.price_cents)} €</p>
+                      <p className="font-bold text-primary">{centsToEur(tier.price_cents)} €</p>
                       {soldOut && <p className="text-xs text-red-500">Agotado</p>}
                     </div>
                   </label>
@@ -254,14 +254,14 @@ export default function EventDetail() {
 
             {selectedTier && selectedTier.remaining > 0 && (
               <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 text-sm leading-none">−</button>
-                  <span className="px-4 py-1.5 text-sm font-medium border-x border-gray-300">{quantity}</span>
-                  <button type="button" onClick={() => setQuantity(Math.min(selectedTier.remaining, quantity + 1))}
-                    className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 text-sm leading-none">+</button>
+                <div className="flex items-center border border-primary/20 rounded-lg">
+                  <button type="button" aria-label="Reducir cantidad" onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-3 py-1.5 text-muted hover:bg-elevated text-sm leading-none">−</button>
+                  <span className="px-4 py-1.5 text-sm font-medium border-x border-primary/20">{quantity}</span>
+                  <button type="button" aria-label="Aumentar cantidad" onClick={() => setQuantity(Math.min(selectedTier.remaining, quantity + 1))}
+                    className="px-3 py-1.5 text-muted hover:bg-elevated text-sm leading-none">+</button>
                 </div>
-                <p className="text-sm text-gray-500">Total: <span className="font-bold text-indigo-600">{centsToEur(totalCents)} €</span></p>
+                <p className="text-sm text-muted">Total: <span className="font-bold text-primary">{centsToEur(totalCents)} €</span></p>
               </div>
             )}
 
@@ -274,16 +274,16 @@ export default function EventDetail() {
         )}
 
         {clientSecret && stripePromise && (
-          <div className="border-t border-gray-100 pt-6">
-            <h2 className="font-semibold text-gray-900 mb-3">Finalizar pago</h2>
+          <div className="border-t border-primary/10 pt-6">
+            <h2 className="font-semibold text-text mb-3">Finalizar pago</h2>
             <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
               <EmbeddedCheckout />
             </EmbeddedCheckoutProvider>
           </div>
         )}
         {clientSecret && !stripePromise && (
-          <div className="border-t border-gray-100 pt-6">
-            <h2 className="font-semibold text-gray-900 mb-3">Finalizar pago</h2>
+          <div className="border-t border-primary/10 pt-6">
+            <h2 className="font-semibold text-text mb-3">Finalizar pago</h2>
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-xl p-4">
               Stripe no está configurado. Añade <code className="bg-yellow-100 px-1 rounded">VITE_STRIPE_PUBLISHABLE_KEY</code> en tu archivo <code className="bg-yellow-100 px-1 rounded">.env</code>.
             </div>
@@ -297,12 +297,12 @@ export default function EventDetail() {
         )}
 
         {tiers.length === 0 && user && (
-          <div className="border-t border-gray-100 pt-6">
-            <p className="text-sm text-gray-400">Este evento aún no tiene entradas a la venta.</p>
+          <div className="border-t border-primary/10 pt-6">
+            <p className="text-sm text-muted">Este evento aún no tiene entradas a la venta.</p>
           </div>
         )}
 
-        <div className="flex items-center gap-4 text-sm text-gray-500 border-t border-gray-100 pt-4">
+        <div className="flex items-center gap-4 text-sm text-muted border-t border-primary/10 pt-4">
           <span>Aforo: {event.remaining_capacity}/{event.max_capacity}</span>
         </div>
       </div>

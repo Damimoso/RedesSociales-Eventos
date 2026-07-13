@@ -109,34 +109,36 @@ export default function MyTickets() {
       <h1 className="text-xl font-bold mb-6">Mis Entradas</h1>
 
       {tickets.length === 0 && (
-        <p className="text-gray-500 text-center py-12">Todavía no tienes entradas compradas.</p>
+        <p className="text-muted text-center py-12">Todavía no tienes entradas compradas.</p>
       )}
 
       <div className="space-y-4">
         {tickets.map(t => (
-          <div key={t.ticket_id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+          <div key={t.ticket_id} className="bg-surface rounded-xl border border-primary/10 overflow-hidden shadow-sm">
             <div className="flex gap-3 p-4">
               {t.cover_image_url && (
                 <img src={t.cover_image_url} alt="" className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
               )}
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-gray-900 truncate">{t.event_title}</h2>
-                <p className="text-sm text-gray-500">{formatDate(t.start_date)}</p>
-                <p className="text-sm text-gray-500">{t.event_city}</p>
+                <h2 className="font-semibold text-text truncate">{t.event_title}</h2>
+                <p className="text-sm text-muted">{formatDate(t.start_date)}</p>
+                <p className="text-sm text-muted">{t.event_city}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
-                    t.status === 'confirmed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
+                    t.status === 'confirmed' ? 'bg-success/10 text-success' : 'bg-secondary/10 text-secondary'
                   }`}>
                     {t.status === 'confirmed' ? 'Confirmada' : t.status}
                   </span>
-                  <span className="text-xs text-gray-400">{t.quantity} entrada{t.quantity > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-muted">{t.quantity} entrada{t.quantity > 1 ? 's' : ''}</span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => toggle(t.ticket_id)}
-              className="w-full flex items-center justify-between px-4 py-2.5 border-t border-gray-100 text-sm text-indigo-600 hover:bg-indigo-50 transition-colors font-medium"
+              aria-expanded={!!expanded[t.ticket_id]}
+              aria-controls={`qr-${t.ticket_id}`}
+              className="w-full flex items-center justify-between px-4 py-2.5 border-t border-primary/10 text-sm text-primary hover:bg-primary/10 transition-colors font-medium"
             >
               {expanded[t.ticket_id] ? 'Ocultar QR' : 'Mostrar código QR'}
               <svg className={`w-4 h-4 transition-transform ${expanded[t.ticket_id] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -145,17 +147,17 @@ export default function MyTickets() {
             </button>
 
             {expanded[t.ticket_id] && (
-              <div className="px-4 pb-4 flex flex-col items-center gap-2">
+              <div id={`qr-${t.ticket_id}`} className="px-4 pb-4 flex flex-col items-center gap-2">
                 {qrUrls[t.ticket_id] ? (
                   <>
                     <div className="relative">
                       <img src={qrUrls[t.ticket_id]} alt="QR de entrada" className="w-48 h-48" />
-                      <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                      <div className="absolute bottom-1 right-1 bg-text/60 text-base text-[10px] px-1.5 py-0.5 rounded font-mono">
                         {countdowns[t.ticket_id] ?? Math.floor(QR_ROTATION_INTERVAL / 1000)}s
                       </div>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-mono tracking-wider">{tokens[t.ticket_id] ?? t.qr_code}</p>
-                    <span className="text-[11px] text-gray-400">
+                    <p className="text-[10px] text-muted font-mono tracking-wider">{tokens[t.ticket_id] ?? t.qr_code}</p>
+                    <span className="text-[11px] text-muted">
                       El código QR se renueva cada 30 segundos por seguridad
                     </span>
                   </>
