@@ -27,6 +27,20 @@ function suppressMaplibreWorkerError(e: Event) {
   }
 }
 
+// Run before React mounts so all Workers (including MapLibre's) inherit the handler
+const OrigWorker = window.Worker
+class PatchedWorker extends OrigWorker {
+  constructor(url: string | URL, options?: WorkerOptions) {
+    super(url, options)
+    this.addEventListener('error', (e: ErrorEvent) => {
+      if (e.message.includes('Expected value to be of type number, but found null')) {
+        e.preventDefault()
+      }
+    })
+  }
+}
+window.Worker = PatchedWorker
+
 export default function App() {
   useEffect(() => {
     window.addEventListener('error', suppressMaplibreWorkerError, true)
