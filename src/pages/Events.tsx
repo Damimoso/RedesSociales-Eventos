@@ -62,11 +62,11 @@ export default function Events() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Explorar eventos</h1>
         <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-500">Radio:</label>
+          <label className="text-sm text-muted">Radio:</label>
           <select
             value={radius}
             onChange={e => setRadius(Number(e.target.value))}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-primary/20 bg-base px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value={10}>10 km</option>
             <option value={25}>25 km</option>
@@ -78,15 +78,15 @@ export default function Events() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 space-y-3">
+      <div className="bg-surface rounded-xl border border-primary/10 p-4 mb-6 space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap gap-1">
             {(['today', 'weekend', 'week', 'month'] as const).map(d => (
               <button key={d} onClick={() => setQuickDate(quickDate === d ? '' : d)}
                 className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                   quickDate === d
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-primary text-white'
+                    : 'bg-elevated text-muted hover:bg-elevated/80'
                 }`}
               >
                 {d === 'today' ? 'Hoy' : d === 'weekend' ? 'Este finde' : d === 'week' ? 'Esta semana' : 'Este mes'}
@@ -95,14 +95,14 @@ export default function Events() {
           </div>
 
           <select value={category} onChange={e => setCategory(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-primary/20 bg-base px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Todas las categorías</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
           <select value={city} onChange={e => setCity(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-primary/20 bg-base px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Todas las ciudades</option>
             {cities.map(c => <option key={c} value={c}>{c}</option>)}
@@ -110,14 +110,14 @@ export default function Events() {
 
           <div className="flex items-center gap-2 text-sm">
             <input type="date" value={customDateFrom} onChange={e => { setCustomDateFrom(e.target.value); setQuickDate('') }}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <span className="text-gray-400">→</span>
+              className="rounded-lg border border-primary/20 bg-base px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary" />
+            <span className="text-muted">→</span>
             <input type="date" value={customDateTo} onChange={e => { setCustomDateTo(e.target.value); setQuickDate('') }}
-              className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              className="rounded-lg border border-primary/20 bg-base px-2 py-1.5 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
 
           {hasFilters && (
-            <button onClick={clearFilters} className="text-xs text-red-500 hover:underline">
+            <button onClick={clearFilters} className="text-xs text-error hover:underline">
               Limpiar filtros
             </button>
           )}
@@ -125,18 +125,18 @@ export default function Events() {
       </div>
 
       {geo.position && (
-        <div className="h-[400px] mb-6 rounded-xl overflow-hidden border border-gray-200 relative">
+        <div className="h-[400px] mb-6 rounded-xl overflow-hidden border border-primary/10 relative">
           <EventMap events={events} center={geo.position} onEventClick={handleEventClick} />
 
           {/* Filtros flotantes sobre el mapa */}
           <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center gap-2 pointer-events-none">
-            <div className="pointer-events-auto flex flex-wrap gap-1 bg-white/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-white/50">
+            <div className="pointer-events-auto flex flex-wrap gap-1 bg-surface/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-primary/10">
               {(['today', 'weekend', 'week', 'month'] as const).map(d => (
                 <button key={d} onClick={() => setQuickDate(quickDate === d ? '' : d)}
                   className={`text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors ${
                     quickDate === d
                       ? 'bg-primary text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-muted hover:bg-elevated'
                   }`}
                 >
                   {d === 'today' ? 'Hoy' : d === 'weekend' ? 'Finde' : d === 'week' ? 'Semana' : 'Mes'}
@@ -144,33 +144,33 @@ export default function Events() {
               ))}
             </div>
 
-            <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-white/50 flex items-center gap-1">
+            <div className="pointer-events-auto bg-surface/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-primary/10 flex items-center gap-1">
               <select value={category} onChange={e => setCategory(e.target.value)}
-                className="text-xs bg-transparent border-none px-2 py-1.5 rounded focus:outline-none text-gray-600"
+                className="text-xs bg-transparent border-none px-2 py-1.5 rounded focus:outline-none text-text"
               >
                 <option value="">Categoría</option>
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <span className="text-gray-300">|</span>
+              <span className="text-muted">|</span>
               <select value={city} onChange={e => setCity(e.target.value)}
-                className="text-xs bg-transparent border-none px-2 py-1.5 rounded focus:outline-none text-gray-600"
+                className="text-xs bg-transparent border-none px-2 py-1.5 rounded focus:outline-none text-text"
               >
                 <option value="">Ciudad</option>
                 {cities.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
-            <div className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-white/50 flex items-center gap-1 text-xs">
+            <div className="pointer-events-auto bg-surface/90 backdrop-blur-sm rounded-lg p-1.5 shadow-lg border border-primary/10 flex items-center gap-1 text-xs">
               <input type="date" value={customDateFrom} onChange={e => { setCustomDateFrom(e.target.value); setQuickDate('') }}
-                className="w-28 bg-transparent border-none px-1 py-1.5 rounded focus:outline-none text-gray-600 text-xs" />
-              <span className="text-gray-400">→</span>
+                className="w-28 bg-transparent border-none px-1 py-1.5 rounded focus:outline-none text-text text-xs" />
+              <span className="text-muted">→</span>
               <input type="date" value={customDateTo} onChange={e => { setCustomDateTo(e.target.value); setQuickDate('') }}
-                className="w-28 bg-transparent border-none px-1 py-1.5 rounded focus:outline-none text-gray-600 text-xs" />
+                className="w-28 bg-transparent border-none px-1 py-1.5 rounded focus:outline-none text-text text-xs" />
             </div>
 
             {hasFilters && (
               <button onClick={clearFilters}
-                className="pointer-events-auto text-[10px] font-medium bg-red-50 text-red-500 px-2 py-1 rounded-lg hover:bg-red-100 transition-colors border border-red-200">
+                className="pointer-events-auto text-[10px] font-medium bg-error/10 text-error px-2 py-1 rounded-lg hover:bg-error/20 transition-colors border border-error/20">
                 Limpiar
               </button>
             )}
@@ -187,7 +187,7 @@ export default function Events() {
         <LoadingSpinner />
       ) : events.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-400 mb-4">
+          <p className="text-muted mb-4">
             {(() => {
               const isSingleDay = quickDate === 'today' || (customDateFrom && customDateFrom === customDateTo)
               const hasDateFilter = !!(quickDate || customDateFrom || customDateTo)
@@ -202,7 +202,7 @@ export default function Events() {
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-400 mb-4">{events.length} eventos encontrados</p>
+          <p className="text-sm text-muted mb-4">{events.length} eventos encontrados</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map(e => <EventCard key={e.id} event={e} />)}
           </div>
