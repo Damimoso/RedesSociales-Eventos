@@ -33,6 +33,7 @@
 body {
   background-color: var(--th-base, #F8F9FA);
   color: var(--th-text, #1F2937);
+  color-scheme: light;
 }
 
 ::-webkit-scrollbar { width: 6px; }

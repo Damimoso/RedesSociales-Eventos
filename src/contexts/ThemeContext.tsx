@@ -10,11 +10,12 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-function applyThemeVars(vars: ThemeVars) {
+function applyThemeVars(vars: ThemeVars, themeId: ThemeId) {
   const root = document.documentElement
   Object.entries(vars).forEach(([key, value]) => {
     root.style.setProperty(`--th-${key}`, value)
   })
+  root.style.colorScheme = themeId === 'dark' ? 'dark' : 'light'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -23,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   )
 
   useEffect(() => {
-    applyThemeVars(getTheme(themeId).vars)
+    applyThemeVars(getTheme(themeId).vars, themeId)
   }, [themeId])
 
   const value = useMemo(() => ({
