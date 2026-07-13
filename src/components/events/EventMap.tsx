@@ -75,8 +75,6 @@ export function EventMap({ events, center, onEventClick }: Props) {
       map.resize()
       setReady(true)
     })
-    map.on('error', (e) => console.warn('MapLibre error:', e.error?.message))
-
     mapRef.current = map
     return () => { window.removeEventListener('error', suppressMaplibreError, true); window.removeEventListener('unhandledrejection', suppressMaplibreError, true); map.remove(); mapRef.current = null; setReady(false) }
   }, [])

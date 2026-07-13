@@ -21,8 +21,9 @@ import Messages from '@/pages/Messages'
 
 function suppressMaplibreWorkerError(e: Event) {
   const msg = e instanceof ErrorEvent ? e.message : e instanceof PromiseRejectionEvent ? e.reason?.message : ''
-  if (msg?.includes('Expected value to be of type number, but found null')) {
+  if (typeof msg === 'string' && msg.includes('Expected value to be of type number, but found null')) {
     e.preventDefault()
+    e.stopImmediatePropagation()
   }
 }
 
@@ -30,9 +31,18 @@ export default function App() {
   useEffect(() => {
     window.addEventListener('error', suppressMaplibreWorkerError, true)
     window.addEventListener('unhandledrejection', suppressMaplibreWorkerError, true)
+
+    const origError = console.error
+    console.error = (...args) => {
+      const msg = args.join(' ')
+      if (msg.includes('Expected value to be of type number, but found null')) return
+      origError.apply(console, args)
+    }
+
     return () => {
       window.removeEventListener('error', suppressMaplibreWorkerError, true)
       window.removeEventListener('unhandledrejection', suppressMaplibreWorkerError, true)
+      console.error = origError
     }
   }, [])
   return (

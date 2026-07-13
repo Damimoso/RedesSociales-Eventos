@@ -13,7 +13,7 @@ import Stripe from 'https://esm.sh/stripe@17.7.0?target=deno'
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const APP_URL = Deno.env.get('APP_URL') ?? 'https://redes-sociales-eventos.vercel.app'
+const APP_URL = Deno.env.get('APP_URL') ?? ''
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-03-31-basil' })
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
