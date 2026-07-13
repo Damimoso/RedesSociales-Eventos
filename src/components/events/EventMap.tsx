@@ -51,12 +51,14 @@ export function EventMap({ events, center, onEventClick }: Props) {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
-    const suppressWorkerError = (e: ErrorEvent) => {
-      if (e.filename?.startsWith('blob:') && e.message?.includes('Expected value to be of type number, but found null')) {
+    const suppressMaplibreError = (e: Event) => {
+      const msg = e instanceof ErrorEvent ? e.message : e instanceof PromiseRejectionEvent ? e.reason?.message : ''
+      if (msg?.includes('Expected value to be of type number, but found null')) {
         e.preventDefault()
       }
     }
-    window.addEventListener('error', suppressWorkerError, true)
+    window.addEventListener('error', suppressMaplibreError, true)
+    window.addEventListener('unhandledrejection', suppressMaplibreError, true)
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
@@ -76,7 +78,7 @@ export function EventMap({ events, center, onEventClick }: Props) {
     map.on('error', (e) => console.warn('MapLibre error:', e.error?.message))
 
     mapRef.current = map
-    return () => { window.removeEventListener('error', suppressWorkerError, true); map.remove(); mapRef.current = null; setReady(false) }
+    return () => { window.removeEventListener('error', suppressMaplibreError, true); window.removeEventListener('unhandledrejection', suppressMaplibreError, true); map.remove(); mapRef.current = null; setReady(false) }
   }, [])
 
   useEffect(() => {
