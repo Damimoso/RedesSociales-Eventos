@@ -27,19 +27,31 @@ function suppressMaplibreWorkerError(e: Event) {
   }
 }
 
-// Run before React mounts so all Workers (including MapLibre's) inherit the handler
-const OrigWorker = window.Worker
-class PatchedWorker extends OrigWorker {
-  constructor(url: string | URL, options?: WorkerOptions) {
-    super(url, options)
-    this.addEventListener('error', (e: ErrorEvent) => {
-      if (e.message.includes('Expected value to be of type number, but found null')) {
-        e.preventDefault()
+// Intercept Blob to inject console.error suppression into worker script blobs.
+// Worker errors do not propagate to the main thread, so we inject suppression
+// directly into the worker code before the worker is instantiated.
+const _INJECTED_PREFIX = 'var _ce=self.console.error;self.console.error=function(){var m=Array.prototype.map.call(arguments,String).join(" ");if(m.includes("Expected value to be of type number"))return;_ce.apply(self,arguments)};'
+class PatchedBlob extends Blob {
+  constructor(parts?: BlobPart[], options?: BlobPropertyBag) {
+    if (options?.type === 'text/javascript' && parts != null) {
+      const newParts: BlobPart[] = []
+      let alreadyPatched = false
+      for (const p of parts) {
+        if (typeof p === 'string' && p.includes('var _ce=self.console.error')) {
+          alreadyPatched = true
+        }
+        newParts.push(p)
       }
-    })
+      if (!alreadyPatched) {
+        newParts.unshift(_INJECTED_PREFIX)
+      }
+      super(newParts, options)
+    } else {
+      super(parts, options)
+    }
   }
 }
-window.Worker = PatchedWorker
+window.Blob = PatchedBlob
 
 export default function App() {
   useEffect(() => {
