@@ -1,5 +1,5 @@
 export type ThemeId =
-  | 'default' | 'and' | 'ara' | 'ast' | 'bal' | 'can'
+  | 'light' | 'dark' | 'and' | 'ara' | 'ast' | 'bal' | 'can'
   | 'cant' | 'clm' | 'cyl' | 'cat' | 'val' | 'ext'
   | 'gal' | 'rio' | 'mad' | 'mur' | 'nav' | 'pva' | 'ceu' | 'mel'
 
@@ -19,19 +19,34 @@ export type ThemeVars = {
 const hex = (h: string) => h
 
 export const THEMES: Record<ThemeId, { name: string; vars: ThemeVars }> = {
-  default: {
-    name: 'Blanco',
+  light: {
+    name: 'Claro',
     vars: {
-      primary: hex('#6366F1'),
-      secondary: hex('#EC4899'),
-      'primary-hover': hex('#4F46E5'),
-      'secondary-hover': hex('#DB2777'),
-      base: hex('#F8F9FA'),
+      primary: hex('#7033FF'),
+      secondary: hex('#FF4A5A'),
+      'primary-hover': hex('#5A29CC'),
+      'secondary-hover': hex('#E03545'),
+      base: hex('#F8FAFF'),
       surface: hex('#FFFFFF'),
-      elevated: hex('#F3F4F6'),
-      text: hex('#1F2937'),
+      elevated: hex('#F0F3FF'),
+      text: hex('#1A1A2E'),
       muted: hex('#6B7280'),
-      border: 'rgba(99,102,241,0.12)',
+      border: 'rgba(112,51,255,0.12)',
+    },
+  },
+  dark: {
+    name: 'Oscuro',
+    vars: {
+      primary: hex('#FF4A5A'),
+      secondary: hex('#00F2FE'),
+      'primary-hover': hex('#E03545'),
+      'secondary-hover': hex('#00D0E0'),
+      base: hex('#0E131F'),
+      surface: hex('#1A2235'),
+      elevated: hex('#242D42'),
+      text: hex('#F0F4FF'),
+      muted: hex('#8892B0'),
+      border: 'rgba(0,242,254,0.15)',
     },
   },
   and: {
@@ -360,12 +375,12 @@ const CITY_PROVINCE: Record<string, string> = {
 }
 
 export function detectTheme(city?: string | null): ThemeId {
-  if (!city) return 'default'
+  if (!city) return 'light'
   const c = city.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   const province = CITY_PROVINCE[c] ?? c
-  return PROVINCE_TO_COMMUNITY[province] ?? 'default'
+  return PROVINCE_TO_COMMUNITY[province] ?? 'light'
 }
 
 export function getTheme(themeId: ThemeId) {
-  return THEMES[themeId] ?? THEMES.default
+  return THEMES[themeId] ?? THEMES.light
 }

@@ -18,7 +18,9 @@ function applyThemeVars(vars: ThemeVars) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [themeId, setThemeId] = useState<ThemeId>('default')
+  const [themeId, setThemeId] = useState<ThemeId>(
+    () => (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+  )
 
   useEffect(() => {
     applyThemeVars(getTheme(themeId).vars)

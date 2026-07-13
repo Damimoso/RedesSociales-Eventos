@@ -4,6 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/Button'
 import logoLight from '@/img/Logo_fondo_blanco.png'
 import logoDark from '@/img/Logo_fondo_negro.png'
+import type { ThemeId } from '@/lib/themes'
 
 function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
@@ -22,9 +23,11 @@ function isDarkHex(hex: string): boolean {
   return (r * 0.299 + g * 0.587 + b * 0.114) < 128
 }
 
+const NEXT_THEME: Record<string, ThemeId> = { light: 'dark', dark: 'light' }
+
 export function Header() {
   const { user, roles, signOut } = useAuth()
-  const { vars } = useTheme()
+  const { themeId, vars, setThemeId } = useTheme()
   const navigate = useNavigate()
   const isOrganizer = roles?.includes('organizer') || roles?.includes('admin')
   const isAdmin = roles?.includes('admin')
@@ -45,6 +48,14 @@ export function Header() {
               {isOrganizer && <NavLink to="/dashboard">Dashboard</NavLink>}
               {isOrganizer && <NavLink to="/events/new">Crear Evento</NavLink>}
               {isAdmin && <NavLink to="/admin">Admin</NavLink>}
+              <button onClick={() => setThemeId(NEXT_THEME[themeId] ?? 'light')}
+                className="text-muted hover:text-text transition-colors p-1.5 rounded-lg hover:bg-primary/10" title="Cambiar tema">
+                {themeId === 'dark' ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                )}
+              </button>
               <Link to="/profile" className="flex items-center gap-2 text-sm text-text hover:text-primary transition-colors">
                 <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shadow-lg"
                   style={{ background: 'linear-gradient(135deg, var(--th-primary, #6366F1), var(--th-secondary, #EC4899))', color: '#fff' }}>
