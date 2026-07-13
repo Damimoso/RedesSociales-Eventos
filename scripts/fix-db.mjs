@@ -1,12 +1,21 @@
+import 'dotenv/config'
 import pkg from 'pg'
 const { Pool } = pkg
 
+const DB_HOST = process.env.DATABASE_HOST || 'db.ntkrsjwpxfubsayxqezd.supabase.co'
+const DB_PASSWORD = process.env.DATABASE_PASSWORD
+
+if (!DB_PASSWORD) {
+  console.error('Falta DATABASE_PASSWORD en .env')
+  process.exit(1)
+}
+
 const pool = new Pool({
-  host: 'db.ntkrsjwpxfubsayxqezd.supabase.co',
+  host: DB_HOST,
   port: 5432,
   database: 'postgres',
   user: 'postgres',
-  password: 'Escondite-3',
+  password: DB_PASSWORD,
   ssl: { rejectUnauthorized: false },
 })
 

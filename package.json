@@ -13,6 +13,7 @@
     "@stripe/react-stripe-js": "^6.7.0",
     "@stripe/stripe-js": "^9.9.0",
     "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^17.4.2",
     "html5-qrcode": "^2.3.8",
     "ibantools": "^4.5.4",
     "maplibre-gl": "^5.24.0",
