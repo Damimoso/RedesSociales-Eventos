@@ -16,6 +16,7 @@ import Dashboard from '@/pages/Dashboard'
 import CreateEventWizard from '@/pages/CreateEventWizard'
 import Admin from '@/pages/Admin'
 import ArtistProfile from '@/pages/ArtistProfile'
+import ArtistCalendar from '@/pages/ArtistCalendar'
 import Friends from '@/pages/Friends'
 import Messages from '@/pages/Messages'
 
@@ -107,8 +108,9 @@ export default function App() {
               <ProtectedRoute roles={['organizer', 'admin']}><Dashboard /></ProtectedRoute>
             } />
 
-            {/* Artista — perfil público */}
+            {/* Artista — perfil público y calendario */}
             <Route path="/artist/:id" element={<ArtistProfile />} />
+            <Route path="/artist/:id/calendar" element={<ArtistCalendar />} />
 
             {/* Solo admin */}
             <Route path="/admin" element={
