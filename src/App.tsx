@@ -30,14 +30,14 @@ function suppressMaplibreWorkerError(e: Event) {
 // Intercept Blob to inject console.error suppression into worker script blobs.
 // Worker errors do not propagate to the main thread, so we inject suppression
 // directly into the worker code before the worker is instantiated.
-const _INJECTED_PREFIX = 'var _ce=self.console.error;self.console.error=function(){var m=Array.prototype.map.call(arguments,String).join(" ");if(m.includes("Expected value to be of type number"))return;_ce.apply(self,arguments)};'
+const _INJECTED_PREFIX = 'var _ce=console.error;console.error=function(){var m=Array.prototype.map.call(arguments,String).join(" ");if(m.includes("Expected value to be of type number")||m.includes("/rpc/check_streak"))return;_ce.apply(console,arguments)};var _oe=self.onerror;self.onerror=function(m,s,l,c,e){if(e&&e.message&&e.message.includes("Expected value to be of type number, but found null"))return true;return _oe?_oe.apply(self,arguments):false};'
 class PatchedBlob extends Blob {
   constructor(parts?: BlobPart[], options?: BlobPropertyBag) {
     if (options?.type === 'text/javascript' && parts != null) {
       const newParts: BlobPart[] = []
       let alreadyPatched = false
       for (const p of parts) {
-        if (typeof p === 'string' && p.includes('var _ce=self.console.error')) {
+        if (typeof p === 'string' && p.includes('var _ce=console.error')) {
           alreadyPatched = true
         }
         newParts.push(p)
