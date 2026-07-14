@@ -32,6 +32,34 @@ export function useStreak() {
       if (!mountedRef.current || gen !== refreshRef.current) return
 
       if (rpcError) {
+        console.warn('[useStreak] RPC error:', JSON.stringify({ message: rpcError.message, code: rpcError.code, details: rpcError.details, status: (rpcError as any).status }))
+        // Fallback: fetch directly bypassing Supabase client
+        const { data: sessionData } = await supabase.auth.getSession()
+        const token = sessionData.session?.access_token
+        const url = import.meta.env.VITE_SUPABASE_URL
+        const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+        if (url && key) {
+          try {
+            const res = await fetch(`${url}/rest/v1/rpc/check_streak`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${token ?? key}` },
+              body: '{}',
+            })
+            const text = await res.text()
+            console.warn(`[useStreak] Direct fetch: status=${res.status} body=${text}`)
+            if (res.ok) {
+              const parsed = JSON.parse(text)
+              if (parsed && parsed.length > 0) {
+                setStreak({ current_streak: parsed[0].current_streak, longest_streak: parsed[0].longest_streak })
+                setError(null)
+                setLoading(false)
+                return
+              }
+            }
+          } catch (fetchErr: any) {
+            console.warn('[useStreak] Direct fetch also failed:', fetchErr.message)
+          }
+        }
         setStreak({ current_streak: 0, longest_streak: 0 })
       } else if (data && data.length > 0) {
         setStreak({ current_streak: data[0].current_streak, longest_streak: data[0].longest_streak })
@@ -39,7 +67,8 @@ export function useStreak() {
         setStreak({ current_streak: 0, longest_streak: 0 })
       }
       setError(null)
-    } catch {
+    } catch (e: any) {
+      console.warn('[useStreak] catch block:', e.message)
       if (mountedRef.current && gen === refreshRef.current) { setStreak({ current_streak: 0, longest_streak: 0 }); setError(null) }
     } finally {
       if (mountedRef.current && gen === refreshRef.current) setLoading(false)
