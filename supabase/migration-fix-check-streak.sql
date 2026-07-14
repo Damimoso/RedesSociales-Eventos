@@ -6,9 +6,10 @@ SECURITY INVOKER
 SET search_path = 'public'
 AS $$
 DECLARE
-    v_user_id   UUID := auth.uid();
-    v_today     DATE := CURRENT_DATE;
-    v_yesterday DATE := CURRENT_DATE - 1;
+    v_user_id    UUID := auth.uid();
+    v_today      DATE := CURRENT_DATE;
+    v_yesterday  DATE := CURRENT_DATE - 1;
+    v_last_visit DATE;
     r record;
 BEGIN
     IF v_user_id IS NULL THEN
@@ -23,16 +24,16 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     SELECT s.current_streak, s.longest_streak, s.last_visit_date
-    INTO current_streak, longest_streak
+    INTO current_streak, longest_streak, v_last_visit
     FROM public.user_streaks s
     WHERE user_id = v_user_id;
 
-    IF FOUND AND last_visit_date = v_today THEN
+    IF FOUND AND v_last_visit = v_today THEN
         RETURN NEXT;
         RETURN;
     END IF;
 
-    IF FOUND AND last_visit_date = v_yesterday THEN
+    IF FOUND AND v_last_visit = v_yesterday THEN
         UPDATE public.user_streaks
         SET current_streak = current_streak + 1,
             longest_streak = GREATEST(longest_streak, current_streak + 1),
