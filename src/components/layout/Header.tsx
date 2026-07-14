@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/Button'
@@ -194,8 +195,8 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
-      {menuOpen && (
+      {/* Mobile drawer via portal to body */}
+      {menuOpen && createPortal(
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={closeMenu} />
           <div className="absolute top-0 right-0 w-72 h-full bg-surface shadow-xl overflow-y-auto">
@@ -221,7 +222,8 @@ export function Header() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   )
