@@ -54,6 +54,7 @@ export function Header() {
   const { user, roles, signOut } = useAuth()
   const { themeId, vars, setThemeId } = useTheme()
   const navigate = useNavigate()
+  const isArtist = roles?.includes('artist')
   const isOrganizer = roles?.includes('organizer') || roles?.includes('admin')
   const isAdmin = roles?.includes('admin')
   const logo = isDarkHex(vars.base) ? logoDark : logoLight
@@ -92,8 +93,10 @@ export function Header() {
         )}
       </div>
       <div className="relative">
-        <DesktopNavLink to="/friends">Amigos</DesktopNavLink>
-        {pendingFriends > 0 && (
+        <DesktopNavLink to="/friends">
+          {isArtist ? 'Amigos' : isOrganizer ? 'Artistas' : 'Siguiendo'}
+        </DesktopNavLink>
+        {(isArtist || isOrganizer) && pendingFriends > 0 && (
           <span className="absolute -top-1.5 -right-2 bg-secondary text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
             {pendingFriends > 9 ? '9+' : pendingFriends}
           </span>
@@ -118,8 +121,10 @@ export function Header() {
         )}
       </div>
       <div className="relative flex items-center justify-between px-4 py-2.5">
-        <MobileNavLink to="/friends" onClick={closeMenu}>Amigos</MobileNavLink>
-        {pendingFriends > 0 && (
+        <MobileNavLink to="/friends" onClick={closeMenu}>
+          {isArtist ? 'Amigos' : isOrganizer ? 'Artistas' : 'Siguiendo'}
+        </MobileNavLink>
+        {(isArtist || isOrganizer) && pendingFriends > 0 && (
           <span className="bg-secondary text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 mr-4">
             {pendingFriends > 9 ? '9+' : pendingFriends}
           </span>

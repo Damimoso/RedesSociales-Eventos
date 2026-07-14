@@ -8,6 +8,7 @@ import { FollowButton } from '@/components/events/FollowButton'
 
 type ArtistData = {
   id: string
+  user_id: string
   stage_name: string
   bio: string | null
   genre: string[] | null
@@ -30,17 +31,22 @@ type ScheduleItem = {
 
 export default function ArtistProfile() {
   const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+  const { user, roles } = useAuth()
   const [artist, setArtist] = useState<ArtistData | null>(null)
   const [schedule, setSchedule] = useState<ScheduleItem[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none')
+  const [friendshipId, setFriendshipId] = useState<string | null>(null)
 
   const [form, setForm] = useState({ stage_name: '', bio: '', website: '', genre: '', spotify: '', youtube: '', instagram: '' })
 
-  const isOwner = user && artist?.id ? true : false
   const [isOwnerState, setIsOwnerState] = useState(false)
+  const viewerRoles = roles ?? []
+  const isViewerArtist = viewerRoles.includes('artist')
+  const isViewerOrganizer = viewerRoles.includes('organizer')
+  const isViewerRegular = !isViewerArtist && !isViewerOrganizer && !viewerRoles.includes('admin')
 
   useEffect(() => {
     if (!id) return
@@ -62,13 +68,31 @@ export default function ArtistProfile() {
 
         if (user && artistData.user_id === user.id) setIsOwnerState(true)
 
+        if (user && artistData.user_id !== user.id && (isViewerArtist || isViewerOrganizer)) {
+          const { data: friendshipData } = await supabase.from('friendships')
+            .select('id, requester_id, addressee_id, status')
+            .in('requester_id', [user.id, artistData.user_id])
+            .in('addressee_id', [user.id, artistData.user_id])
+            .maybeSingle()
+          if (friendshipData) {
+            setFriendshipId(friendshipData.id)
+            if (friendshipData.status === 'accepted') {
+              setFriendshipStatus('accepted')
+            } else if (friendshipData.requester_id === user.id) {
+              setFriendshipStatus('pending_sent')
+            } else {
+              setFriendshipStatus('pending_received')
+            }
+          }
+        }
+
         const { data: schedData } = await supabase.rpc('get_artist_schedule', { p_artist_id: id })
         if (!cancelled && schedData) setSchedule(schedData as ScheduleItem[])
       } catch (err) { console.error('Error loading artist:', err) }
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [id, user])
+  }, [id, user, isViewerArtist, isViewerOrganizer])
 
   const handleSave = useCallback(async () => {
     if (!id) return
@@ -92,6 +116,28 @@ export default function ArtistProfile() {
     }
     setSaving(false)
   }, [id, form])
+
+  const sendFriendshipRequest = async () => {
+    if (!user || !artist) return
+    const { data } = await supabase.from('friendships').insert({
+      requester_id: user.id,
+      addressee_id: artist.user_id,
+    }).select('id').single()
+    if (data) { setFriendshipId(data.id); setFriendshipStatus('pending_sent') }
+  }
+
+  const cancelFriendshipRequest = async () => {
+    if (!friendshipId) return
+    await supabase.from('friendships').delete().eq('id', friendshipId)
+    setFriendshipId(null); setFriendshipStatus('none')
+  }
+
+  const respondToFriendshipRequest = async (accept: boolean) => {
+    if (!friendshipId) return
+    await supabase.from('friendships').update({ status: accept ? 'accepted' : 'rejected' }).eq('id', friendshipId)
+    setFriendshipStatus(accept ? 'accepted' : 'none')
+    if (!accept) setFriendshipId(null)
+  }
 
   if (loading) return <LoadingSpinner />
   if (!artist) return <p className="text-center text-muted py-16">Artista no encontrado</p>
@@ -130,7 +176,36 @@ export default function ArtistProfile() {
               </Button>
             )}
             {!isOwnerState && user && artist.id && (
-              <FollowButton followingId={artist.id} followingType="artist" />
+              isViewerRegular ? (
+                <FollowButton followingId={artist.id} followingType="artist" />
+              ) : isViewerArtist ? (
+                friendshipStatus === 'none' ? (
+                  <Button size="sm" onClick={sendFriendshipRequest}>Enviar solicitud</Button>
+                ) : friendshipStatus === 'pending_sent' ? (
+                  <Button size="sm" variant="secondary" onClick={cancelFriendshipRequest}>Cancelar solicitud</Button>
+                ) : friendshipStatus === 'pending_received' ? (
+                  <>
+                    <Button size="sm" onClick={() => respondToFriendshipRequest(true)}>Aceptar</Button>
+                    <Button size="sm" variant="secondary" onClick={() => respondToFriendshipRequest(false)}>Rechazar</Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={cancelFriendshipRequest}>Eliminar amigo</Button>
+                )
+              ) : (
+                // Organizer
+                friendshipStatus === 'none' ? (
+                  <Button size="sm" onClick={sendFriendshipRequest}>Agregar artista</Button>
+                ) : friendshipStatus === 'pending_sent' ? (
+                  <Button size="sm" variant="secondary" onClick={cancelFriendshipRequest}>Cancelar solicitud</Button>
+                ) : friendshipStatus === 'pending_received' ? (
+                  <>
+                    <Button size="sm" onClick={() => respondToFriendshipRequest(true)}>Aceptar</Button>
+                    <Button size="sm" variant="secondary" onClick={() => respondToFriendshipRequest(false)}>Rechazar</Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={cancelFriendshipRequest}>Quitar artista</Button>
+                )
+              )
             )}
           </div>
         </div>

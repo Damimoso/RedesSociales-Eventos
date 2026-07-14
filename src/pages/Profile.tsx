@@ -13,31 +13,34 @@ type Profile = {
 }
 
 export default function Profile() {
-  const { user } = useAuth()
+  const { user, roles } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [roles, setRoles] = useState<string[]>([])
   const [friendCount, setFriendCount] = useState(0)
+  const isArtist = roles.includes('artist')
+  const isOrganizer = roles.includes('organizer')
+  const isRegular = !isArtist && !isOrganizer && !roles.includes('admin')
 
   useEffect(() => {
     if (!user) return
     let cancelled = false; (async () => {
       try {
-        const [profileRes, rolesRes, friendRes] = await Promise.all([
+        const [profileRes, countRes] = await Promise.all([
           supabase.from('profiles').select('display_name, avatar_url, phone').eq('id', user.id).maybeSingle(),
-          supabase.from('user_roles').select('role').eq('user_id', user.id),
-          supabase.from('friendships').select('id', { count: 'exact', head: true })
-            .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`).eq('status', 'accepted'),
+          isArtist || isOrganizer
+            ? supabase.from('friendships').select('id', { count: 'exact', head: true })
+                .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`).eq('status', 'accepted')
+            : supabase.from('follows').select('id', { count: 'exact', head: true })
+                .eq('follower_id', user.id),
         ])
         if (cancelled) return
         if (profileRes.data) setProfile(profileRes.data)
-        if (rolesRes.data) setRoles(rolesRes.data.map(r => r.role))
-        if (friendRes.count !== null) setFriendCount(friendRes.count)
+        if (countRes?.count !== null && countRes?.count !== undefined) setFriendCount(countRes.count)
       } catch (err) { console.error('Error loading profile:', err) }
       if (!cancelled) setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [user])
+  }, [user, isArtist, isOrganizer])
 
   if (loading) return <LoadingSpinner />
   if (!user) return <p className="text-center text-muted py-16">No has iniciado sesión</p>
@@ -90,8 +93,8 @@ export default function Profile() {
           className="flex items-center justify-between bg-gradient-to-r from-secondary/20 to-transparent rounded-xl p-4 hover:from-secondary/30 transition-all border border-secondary/15"
         >
           <div>
-            <h2 className="font-semibold text-text">Amigos</h2>
-            <p className="text-sm text-muted">{friendCount} amigo{friendCount !== 1 ? 's' : ''}</p>
+            <h2 className="font-semibold text-text">{isArtist ? 'Amigos' : isOrganizer ? 'Artistas' : 'Siguiendo'}</h2>
+            <p className="text-sm text-muted">{friendCount} {isRegular ? 'siguiendo' : friendCount !== 1 ? (isArtist ? 'amigos' : 'artistas') : (isArtist ? 'amigo' : 'artista')}</p>
           </div>
           <svg className="w-5 h-5 text-secondary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
