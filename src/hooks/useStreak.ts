@@ -7,6 +7,12 @@ type Streak = {
   longest_streak: number
 }
 
+// The RPC function returns out_current / out_longest as column names
+type StreakRow = {
+  out_current: number
+  out_longest: number
+}
+
 export function useStreak() {
   const { user } = useAuth()
   const [streak, setStreak] = useState<Streak>({ current_streak: 0, longest_streak: 0 })
@@ -48,9 +54,9 @@ export function useStreak() {
             const text = await res.text()
             console.warn(`[useStreak] Direct fetch: status=${res.status} body=${text}`)
             if (res.ok) {
-              const parsed = JSON.parse(text)
+              const parsed = JSON.parse(text) as StreakRow[]
               if (parsed && parsed.length > 0) {
-                setStreak({ current_streak: parsed[0].current_streak, longest_streak: parsed[0].longest_streak })
+                setStreak({ current_streak: parsed[0].out_current, longest_streak: parsed[0].out_longest })
                 setError(null)
                 setLoading(false)
                 return
@@ -62,7 +68,8 @@ export function useStreak() {
         }
         setStreak({ current_streak: 0, longest_streak: 0 })
       } else if (data && data.length > 0) {
-        setStreak({ current_streak: data[0].current_streak, longest_streak: data[0].longest_streak })
+        const row = data[0] as StreakRow
+        setStreak({ current_streak: row.out_current, longest_streak: row.out_longest })
       } else {
         setStreak({ current_streak: 0, longest_streak: 0 })
       }

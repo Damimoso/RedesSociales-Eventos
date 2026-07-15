@@ -1,20 +1,21 @@
 -- Fix: check_streak returns (0,0) when not authenticated instead of raising
 CREATE OR REPLACE FUNCTION public.check_streak()
-RETURNS TABLE(current_streak INTEGER, longest_streak INTEGER)
+RETURNS TABLE(out_current INTEGER, out_longest INTEGER)
 LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path = 'public'
 AS $$
 DECLARE
-    v_user_id    UUID := auth.uid();
-    v_today      DATE := CURRENT_DATE;
-    v_yesterday  DATE := CURRENT_DATE - 1;
-    v_last_visit DATE;
-    r record;
+    v_user_id       UUID := auth.uid();
+    v_today         DATE := CURRENT_DATE;
+    v_yesterday     DATE := CURRENT_DATE - 1;
+    v_last_visit    DATE;
+    v_current_streak INTEGER;
+    v_longest_streak INTEGER;
 BEGIN
     IF v_user_id IS NULL THEN
-        current_streak := 0;
-        longest_streak := 0;
+        out_current := 0;
+        out_longest := 0;
         RETURN NEXT;
         RETURN;
     END IF;
@@ -24,11 +25,13 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     SELECT s.current_streak, s.longest_streak, s.last_visit_date
-    INTO current_streak, longest_streak, v_last_visit
+    INTO v_current_streak, v_longest_streak, v_last_visit
     FROM public.user_streaks s
-    WHERE user_id = v_user_id;
+    WHERE s.user_id = v_user_id;
 
     IF FOUND AND v_last_visit = v_today THEN
+        out_current := v_current_streak;
+        out_longest := v_longest_streak;
         RETURN NEXT;
         RETURN;
     END IF;
@@ -40,16 +43,18 @@ BEGIN
             last_visit_date = v_today,
             updated_at = NOW()
         WHERE user_id = v_user_id
-        RETURNING current_streak, longest_streak INTO current_streak, longest_streak;
+        RETURNING current_streak, longest_streak INTO v_current_streak, v_longest_streak;
     ELSE
         UPDATE public.user_streaks
         SET current_streak = 1,
             last_visit_date = v_today,
             updated_at = NOW()
         WHERE user_id = v_user_id
-        RETURNING current_streak, longest_streak INTO current_streak, longest_streak;
+        RETURNING current_streak, longest_streak INTO v_current_streak, v_longest_streak;
     END IF;
 
+    out_current := v_current_streak;
+    out_longest := v_longest_streak;
     RETURN NEXT;
 END;
 $$;
